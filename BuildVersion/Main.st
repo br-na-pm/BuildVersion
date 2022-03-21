@@ -1,3 +1,3 @@
 PROGRAM _CYCLIC
-	Git;
+	BuildVersion;
 END_PROGRAM

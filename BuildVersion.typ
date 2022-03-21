@@ -1,5 +1,9 @@
 
 TYPE
+	BuildVersionType : 	STRUCT 
+		Git : BuildVersionGitType;
+		Project : BuildVersionProjectType;
+	END_STRUCT;
 	BuildVersionGitType : 	STRUCT 
 		Url : STRING[255];
 		Branch : STRING[80];
@@ -13,6 +17,11 @@ TYPE
 		CommitAuthorEmail : STRING[80];
 	END_STRUCT;
 	BuildVersionProjectType : 	STRUCT 
-		New_Member : USINT;
+		ASVersion : STRING[80];
+		UserName : STRING[80];
+		ProjectName : STRING[80];
+		Configuration : STRING[80];
+		BuildMode : STRING[80];
+		BuildDate : DT;
 	END_STRUCT;
 END_TYPE
