@@ -5,5 +5,6 @@
     <Object Type="Program" Language="IEC" Description="Version information">BuildVer</Object>
     <Object Type="File" Description="Structure declarations">BuildVersion.typ</Object>
     <Object Type="File" Description="Pre-build script">BuildVersion.ps1</Object>
+    <Object Type="File" Description="Ignore files">.gitignore</Object>
   </Objects>
 </Package>

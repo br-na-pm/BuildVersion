@@ -6,7 +6,7 @@
 #    |  |  - Types.typ
 #    |  |  - Variables.var
 #    |  - BuildVersion.ps1
-$DefaultOutput = $args[0] + "\Logical\BuildVersion\BuildVersion\Variables.var" 
+$DefaultOutput = $args[0] + "\Logical\BuildVersion\BuildVer\Variables.var" 
 $GlobalVariableFile = $args[0] + "\Logical\Global.var" # Location to check for declaration of $StructureIdentifier type
 $StructureIdentifier = "BuildVersionType" # Structure found in BuildVersion.typ with two structure members "Git" and "Project"
 
