@@ -151,7 +151,7 @@ $Sha1 = TruncateString $Sha1 80
 
 $UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
 if($UncommittedChanges.Length -eq 0) {$UncommittedChanges = "None"}
-$UncommittedChanges = TruncateString $UncommittedChanges 80
+$UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
 
 ######
 # Date
@@ -245,4 +245,41 @@ END_VAR
     Set-Content -Path $LocalVariableFile $FileContent
 }
 
+#############################
+# Write configuration version
+#############################
+
+# NOTE: Writing to the Hardware.hw causes the build and Automation Studio to hang up for several seconds
+
+# $TagRegex = "\d{1,2}\.\d{1,2}\.\d{1,2}"
+# $TagMatch = [regex]::Match($Tag, $TagRegex)
+# $TagMatchValue = $TagMatch.Value
+# if($TagMatch.Success) {
+#     $HardwareFile = $args[0] + "\Physical\" + $args[4] + "\Hardware.hw"
+#     if([System.IO.File]::Exists($HardwareFile)) {
+#         $HardwareContent = Get-Content $HardwareFile
+#         $HardwareVersionMatch = [regex]::Match($HardwareContent, "<Parameter\s*ID=""ConfigVersion""\s*Value=""($TagRegex)""\s*/>")
+#         $HardwareIDMatch = [regex]::Match($HardwareContent, "<Parameter\s*ID=""ConfigurationID""\s*Value=""[a-zA-Z_][a-zA-Z_0-9]+""\s*/>")
+#         if($HardwareVersionMatch.Success) {
+#             if($HardwareVersionMatch.Groups[1].Value -ne $TagMatchValue) {
+#                 $NewVersion = $HardwareVersionMatch.Value.Replace($HardwareVersionMatch.Groups[1].Value, $TagMatchValue)
+#                 $FileContent = $HardwareContent.Replace($HardwareVersionMatch.Value, $NewVersion)
+#                 Write-Host "BuildVersion: Setting configuration version to $TagMatchValue"
+#                 # Either option seems to work
+#                 # $FileContent | Out-File -FilePath $HardwareFile -Encoding UTF8
+#                 # Set-Content -Path $HardwareFile -Encoding UTF8 -Value $FileContent
+#             }
+#         }
+#         elseif($HardwareIDMatch.Success) {
+#             $VersionAndIDParameter = $HardwareIDMatch.Value + "`r`n    <Parameter ID=""ConfigVersion"" Value=""$TagMatchValue"" />"
+#             $FileContent = $HardwareContent.Replace($HardwareIDMatch.Value, $VersionAndIDParameter)
+#             Write-Host "BuildVersion: Adding configuration version $TagMatchValue"
+#             # Either option seems to work
+#             # $FileContent | Out-File -FilePath $HardwareFile -Encoding UTF8
+#             # Set-Content -Path $HardwareFile -Encoding UTF8 -Value $FileContent
+#         }
+#     }
+# }
+
+# Complete
 Write-Host "BuildVersion: Completed $ScriptName powershell script"
