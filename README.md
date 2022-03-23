@@ -21,11 +21,12 @@ PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildV
 ## Features
 
 - Local Variable Initialization
-    - Following the [installation](#installation) above, the local variable `BuildVersion` in the BuildVer program will be automatically initialized with version information. 
-    - The entire variable declaration file is overwritten and is automatically ignored by git to avoid frequent differences.
+    - Following the [installation](#installation) instructions above, the local variable `BuildVersion` in the BuildVer program is automatically initialized with version information on any build. 
+    - The entire variable declaration file is overwritten and automatically ignored by git to avoid frequent differences.
 - Global Variable Initialization
     - Delare a varable with type `BuildVersionType` in the Global.var file at the root of the Logical directory. 
-    - This package will find the first variable match and initialize it with the version information. 
+    - The BuildVersion package will find the first variable match and initialize with the version information on any build. 
+    - A confirmation message is written to the console regarding which variable is initialized.
     - Aside from the variable of type `BuildVersionType`, the entire contents of the global variable declaration file remain unchanged.
 - Configuration Version
     - Experimental.

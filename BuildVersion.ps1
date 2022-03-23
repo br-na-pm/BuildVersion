@@ -1,3 +1,4 @@
+################################################################################
 # File: 
 #   BuildVersion.ps1
 # Authors:
@@ -6,16 +7,42 @@
 #   Connor Trostel
 # Date: 
 #   2022-03-21
+################################################################################
+
+###############
+# Note to users
+###############
+# Please edit the "Options" and "Parameters" sections just below as you see fit
+# Pre-build event field (also in README):
+# PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 "$(WIN32_AS_PROJECT_PATH)" "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)"
 
 $ScriptName = $MyInvocation.MyCommand.Name
 Write-Host "BuildVersion: Running $ScriptName powershell script"
 
+#########
+# Options
+#########
+# Use $True or $False to select options
+
+# Create build error if the script fails to due missing arguments
+$OptionErrorOnArguments = $False
+# Create build error if git is not installed or no git repository is found in project root
+$OptionErrorOnRepositoryCheck = $False 
+# Create build error if uncommitted changes are found in git repository
+$OptionErrorOnUncommittedChanges = $False
+# Create build error if neither a local or global variable is initialized with version information
+$OptionErrorIfNoInitialization = $False
+
 #################
-# Check Arguments
+# Check arguments
 #################
-if($args.Length -ne 6) {
-    Write-Host "BuildVersion: Please include all six arguments in pre-build event field. See BuildVersion help"
-    exit 1
+
+if($args.Length -lt 1) {
+    # Write-Warning output to the Automation Studio console is limited to 80 characters
+    Write-Warning "BuildVersion: Missing project path. Add arguments to pre-build event field"
+    Write-Warning "BuildVersion: See README for details and installation of pre-build event"
+    if($OptionErrorOnArguments) { exit 1 } 
+    else { exit 0 }
 }
 
 ############
@@ -23,9 +50,6 @@ if($args.Length -ne 6) {
 ############
 
 # Set paths to local and global variable (IEC 61131-3) declaration files
-# If the global file exists, this script will look for a declaration matching the 
-#   type declared in BuildVersion.typ and automatically initialize the variable
-# If the local file exits, the whole file will be overwritten with an initialization
 $GlobalVariableFile = $args[0] + "\Logical\Global.var"
 $LocalVariableFile = $args[0] + "\Logical\BuildVersion\BuildVer\Variables.var" 
 $LocalProgramDirectory = $args[0] + "\Logical\BuildVersion\BuildVer\"
@@ -69,15 +93,19 @@ function TruncateString {
 # Is git command available? Use `git version`
 try {git version *> $Null} 
 catch {
-    Write-Host "BuildVersion: Git in not installed or is not available in PATH environment. Please install Git (https://git-scm.com/) with recommended option for PATH"
-    return
+    Write-Warning "BuildVersion: Git in not installed or unavailable in PATH environment"
+    Write-Warning "BuildVersion: Please install git (git-scm.com) with recommended options for PATH"
+    if($OptionErrorOnRepositoryCheck) { exit 1 }
+    else { exit 0 }
 }
 
 # Is the project in a repository? Use `git config --list --local`
 git -C $args[0] config --list --local *> $Null 
 if($LASTEXITCODE -ne 0) {
-    Write-Host "BuildVersion: No local repository has been found in the project root. Please initialize a repository with Git"
-    return
+    Write-Warning "BuildVersion: No local repository has been found in the project root"
+    Write-Warning "BuildVersion: Please initialize a repository with git"
+    if($OptionErrorOnRepositoryCheck) { exit 1 }
+    else { exit 0 }
 }
 
 ############
@@ -88,7 +116,7 @@ if($LASTEXITCODE -ne 0) {
 
 $Url = git -C $args[0] config --get remote.origin.url 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Host "BuildVersion: This git repository has no remote defined or the name differs from ""origin"""
+    Write-Warning "BuildVersion: Git repository has no remote or differs from ""origin"""
     $Url = "Unknown"
 }
 $Url = TruncateString $Url 255
@@ -101,7 +129,8 @@ $Url = TruncateString $Url 255
 
 $Branch = git -C $args[0] branch --show-current 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Host "BuildVersion: The local repository appears to be in a headless state. Please checkout a branch"
+    Write-Warning "BuildVersion: The local repository appears to be in a headless state"
+    Write-Warning "BuildVersion: Please checkout a branch"
     $Branch = "Unknown"
 }
 $Branch = TruncateString $Branch 80
@@ -116,7 +145,7 @@ $Branch = TruncateString $Branch 80
 
 $Tag = git -C $args[0] describe --tags --abbrev=0 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Host "BuildVersion: No tags have been created on this branch"
+    Write-Warning "BuildVersion: No tags have been created on this branch"
     $Tag = "None"
     $Describe = "None"
     $AdditionalCommits = 0
@@ -124,7 +153,7 @@ if($LASTEXITCODE -ne 0) {
 else {
     $Describe = git -C $args[0] describe --tags 2> $Null
     if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
-        Write-Host "BuildVersion: Git describe is unable to determine the number of additional commits"
+        Write-Warning "BuildVersion: Git describe is unable to determine # of additional commits"
         $AdditionalCommits = 0
     }
     else {$AdditionalCommits = $Describe.Replace($Tag,"").Split("-")[1]}
@@ -140,7 +169,7 @@ $Describe = TruncateString $Describe 80
 
 $Sha1 = git -C $args[0] rev-parse HEAD 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Host "BuildVersion: Unable to determine latest secure hash"
+    Write-Warning "BuildVersion: Unable to determine latest secure hash"
     $Sha1 = "Unknown"
 }
 $Sha1 = TruncateString $Sha1 80
@@ -151,6 +180,10 @@ $Sha1 = TruncateString $Sha1 80
 
 $UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
 if($UncommittedChanges.Length -eq 0) {$UncommittedChanges = "None"}
+elseif($OptionErrorOnUncommittedChanges) {
+    Write-Warning "BuildVersion: Uncommitted changes detected. Please commit"
+    exit 1
+}
 $UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
 
 ######
@@ -159,7 +192,7 @@ $UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
 
 $GitDate = git -C $args[0] log -1 --format=%cd --date=iso 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Host "BuildVersion: Unable to determine latest commit date"
+    Write-Warning "BuildVersion: Unable to determine latest commit date"
     $CommitDate = "2000-01-01-00:00:00"
 }
 else {$CommitDate = Get-Date $GitDate -Format "yyyy-MM-dd-HH:mm:ss"}
@@ -173,7 +206,7 @@ else {$CommitDate = Get-Date $GitDate -Format "yyyy-MM-dd-HH:mm:ss"}
 $CommitAuthorName = git -C $Args[0] log -1 --pretty=format:'%an' 2> $Null
 $CommitAuthorEmail = git -C $Args[0] log -1 --pretty=format:'%ae' 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Host "BuildVersion: Unable to determine latest commit author"
+    Write-Warning "BuildVersion: Unable to determine latest commit author"
     $CommitAuthorName = "Unknown"
     $CommitAuthorEmail = "Unknown"
 }
@@ -187,11 +220,25 @@ $CommitAuthorEmail = TruncateString $CommitAuthorEmail 80
 ################################################################################
 ################################################################################
 ################################################################################
-$ASVersion = TruncateString $args[1] 80
-$UserName = TruncateString $args[2] 80
-$ProjectName = TruncateString $args[3] 80
-$Configuration = TruncateString $args[4] 80
-$BuildMode = TruncateString $args[5] 80
+
+# Check arguments
+if($args.Length -ne 6) {
+    Write-Warning "BuildVersion: Missing arguments. Add arugments to pre-build event field"
+    Write-Warning "BuildVersion: See README for details and installation of pre-build event"
+    if($OptionErrorOnArguments) { exit 1 } 
+    $ASVersion = "Unknown"
+    $UserName = "Unknown"
+    $ProjectName = "Unknown"
+    $Configuration = "Unknown"
+    $BuildMode = "Unknown"
+}
+else {
+    $ASVersion = TruncateString $args[1] 80
+    $UserName = TruncateString $args[2] 80
+    $ProjectName = TruncateString $args[3] 80
+    $Configuration = TruncateString $args[4] 80
+    $BuildMode = TruncateString $args[5] 80
+}
 $BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
 
 ################################################################################
@@ -217,7 +264,7 @@ if([System.IO.File]::Exists($GlobalVariableFile)) {
     $GlobalVariableContent = Get-Content $GlobalVariableFile
     $GlobalVariableMatch = [regex]::Match($GlobalVariableContent, "([a-zA-Z_][a-zA-Z_0-9]+)\s*:\s*$TypeIdentifier\s*(:=[^;]+)?;")
     if($GlobalVariableMatch.Success) {
-        $GlobalVariableIdentifier = $GlobalVariableMatch.Groups[1]
+        $GlobalVariableIdentifier = $GlobalVariableMatch.Groups[1].Value
         Write-Host "BuildVersion: Writing version information to $GlobalVariableIdentifier of type $TypeIdentifier in file $GlobalVariableFile"
         Set-Content -Path $GlobalVariableFile $GlobalVariableContent.Replace($GlobalVariableMatch.Value, "$GlobalVariableIdentifier : $TypeIdentifier := $BuildVersionInit;")
         $GlobalOption = $True 
@@ -229,8 +276,9 @@ if([System.IO.File]::Exists($GlobalVariableFile)) {
 ####################################
 
 if((-not $GlobalOption) -and (-not [System.IO.Directory]::Exists($LocalProgramDirectory))) {
-    Write-Host "BuildVersion: Create Structured Text program $LocalProgramDirectory or declare global variable of type $TypeIdentifier in $GlobalVariableFile"
-    return
+    Write-Host "BuildVersion: Version information not initialized. Create ST program $LocalProgramDirectory or declare variable of type $TypeIdentifier in $GlobalVariableFile"
+    if($OptionErrorIfNoInitialization) { exit 1 }
+    else { exit 0 }
 }
 
 if([System.IO.Directory]::Exists($LocalProgramDirectory)) {
@@ -249,6 +297,7 @@ END_VAR
 # Write configuration version
 #############################
 
+# EXPERIMENTAL
 # NOTE: Writing to the Hardware.hw causes the build and Automation Studio to hang up for several seconds
 
 # $TagRegex = "\d{1,2}\.\d{1,2}\.\d{1,2}"
