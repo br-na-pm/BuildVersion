@@ -12,13 +12,19 @@ The information captured is automatically initialized to local and/or global var
     - Use the Existing Package object from the Automation Studio toolbox to import BuildVersion into logical view
 2. Create pre-build event
     - Under the active configuration, right-click the CPU directory and select properties
-    - Find the build events tab and place the following text in the pre-build field
+    - Find the build events tab and populate the pre-build field with the following text
 
 #### Existing Package
 
+![Existing pacakge 2022-03-24_14 54 37](https://user-images.githubusercontent.com/33841634/160433934-09ac6e5c-f2cb-4907-9e5b-5cae5273824e.png)
+
 #### CPU Properties
 
+![CPU properties 2022-03-28_09 50 15](https://user-images.githubusercontent.com/33841634/160433980-0cf65aee-bd4e-4716-bc30-3c3e61983f6b.png)
+
 #### Pre-build Field
+
+![Pre-build field 2022-03-28_10 11 12](https://user-images.githubusercontent.com/33841634/160434011-19c77175-6574-4029-ae85-57cbb81b393f.png)
 
 ```powershell
 PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 "$(WIN32_AS_PROJECT_PATH)" "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)"
