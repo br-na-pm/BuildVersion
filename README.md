@@ -1,14 +1,15 @@
 # BuildVersion
 
-BuildVersion is a software package for Automation Studio projects.  
+[BuildVersion](https://github.com/br-na-pm/BuildVersion#readme) is a software package for Automation Studio projects.  
 The package includes a powershell script to automatically capture version information during a build.  
 The script is intended for use with the version control system [git](https://git-scm.com/).  
 The information captured is automatically initialized to local and/or global variables in the project.  
+**NOTE:** This is not an official package. BuildVersion is provided as-is under the GNU GPL v3.0 license agreement.  
 
 ## Installation
 
 1. Add package to project
-    - Download and unarchive the BuildVersion package
+    - [Download](https://github.com/br-na-pm/BuildVersion/releases/latest/download/BuildVersion.zip) and unarchive the BuildVersion package
     - Use the Existing Package object from the Automation Studio toolbox to import BuildVersion into logical view
 2. Create pre-build event
     - Under the active configuration, right-click the CPU directory and select properties
@@ -56,13 +57,25 @@ PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildV
 > The argument "C:\projects\MyProject\Logical\BuildVersion\BuildVersion.ps1" to the -File parameter does not exist.
 
 - Possible cause: The pre-build event was created but the BuildVersion package was not added to the project. 
-  - Remedy: Follow the [installation](#installation) to add existing package to the project.
+  - *Remedy*: Follow the [installation](#installation) to add existing package to the project.
 - Possible cause: The pre-build event created but does not point to the BuildVersion package. 
-  - Remedy: Update the [pre-build field's](#pre-build-field) script path `$(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1` to match the path in the project
+  - *Remedy*: Update the [pre-build field's](#pre-build-field) script path `$(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1` to match the path in the project
 
 > Object "C:\projects\MyProject\Logical\BuildVersion\BuildVer\Variable.var" doesn't exist.
 
 - Possible cause: The package was added to the project, but the pre-build event was not created.
-  - Remedy: Follow the [installation](#installation) to add package to the project.
-- Possible cause: The local task was renamed and the powershell script does not match.
-  - Remedy: Update the powershell script's `$ProgramName` variable under Parameters (default `"BuildVer"`) to match the task name in the project 
+  - *Remedy*: Follow the [installation](#installation) to add package to the project.
+- Possible cause: The local task was renamed and the powershell script cannot find it.
+  - *Remedy*: Update the powershell script's `$ProgramName` variable under Parameters (default `"BuildVer"`) to match the task name in the project
+
+## Build 
+
+Building a project with this package may result in console warnings for files not referenced in the project.  
+
+In Automation Studio 4.11+, it is possible to add specific filters to warnings 9232 and 9233.  Navigate to Configuration View, right-click the PLC object and select properties, chose the Build tab, and add the follow text to the "Objects ignored for build warnings 9232 and 9233" field. The filters are case sensitive.
+
+```
+*README*;*LICENSE*;.git;.gitignore;.github
+```
+
+Prior to Automation Studio 4.11, it is possible to suppress *all* build warnings regarding unreferenced files by adding `-W 9232 9233` to the "Additional build options" field.
