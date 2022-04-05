@@ -1,0 +1,3 @@
+VAR
+    BuildVersion : BuildVersionType
+END_VAR
