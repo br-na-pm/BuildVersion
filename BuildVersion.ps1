@@ -268,6 +268,9 @@ else {
     $ProjectName = TruncateString $args[3] 80
     $Configuration = TruncateString $args[4] 80
     $BuildMode = TruncateString $args[5] 80
+    if($BuildMode -eq '$(AS_BUILD_MODE)') { # Macro is not available, case insensitive comparison, use single quotes to escape "$"
+        $BuildMode = "Unknown"
+    }
 }
 $BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
 
