@@ -268,8 +268,11 @@ else {
     $ProjectName = TruncateString $args[3] 80
     $Configuration = TruncateString $args[4] 80
     $BuildMode = TruncateString $args[5] 80
-    if($BuildMode -eq '$(AS_BUILD_MODE)') { # Macro is not available, case insensitive comparison, use single quotes to escape "$"
-        $BuildMode = "Unknown"
+    $ProjectMarcos = [Ref]$ASVersion, [Ref]$UserName, [Ref]$ProjectName, [Ref]$Configuration, [Ref]$BuildMode 
+    for($i = 0; $i -lt $ProjectMarcos.Length; $i++) {
+        if($ProjectMarcos[$i].Value[0] -eq "$") { # Catch incomplete macros which cause warnings and confusion
+            $ProjectMarcos[$i].Value = "Unknown"
+        }
     }
 }
 $BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
