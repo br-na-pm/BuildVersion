@@ -177,7 +177,7 @@ if($LASTEXITCODE -ne 0) {
     $Version = "None"
 }
 else {
-    $Describe = git -C $args[0] describe --tags 2> $Null
+    $Describe = git -C $args[0] describe --tags --long 2> $Null
     if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
         Write-Warning "BuildVersion: Git describe is unable to determine # of additional commits"
         $AdditionalCommits = 0
