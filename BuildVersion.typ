@@ -1,6 +1,7 @@
 
 TYPE
 	BuildVersionType : 	STRUCT  (*BuildVersion structure definition*)
+		Status : USINT; (*Script status bits*)
 		Git : BuildVersionGitType; (*Git member*)
 		Project : BuildVersionProjectType; (*Project member*)
 	END_STRUCT;

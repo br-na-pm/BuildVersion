@@ -39,6 +39,15 @@ $OptionErrorOnUncommittedChanges = $False
 # Create build error if neither a local or global variable is initialized with version information
 $OptionErrorIfNoInitialization = $False
 
+#############
+# Status bits
+#############
+# Assume all error statuses are true by default
+$Status = 0x01 # Powershell script call is missing arguments (OptionErrorOnArguments)
+$Status += 0x02 # No git repository (OptionErrorOnRepositoryCheck)
+$Status += 0x04 # Uncommitted changes (OptionErrorOnUncommittedChanges)
+# If initialization is not possible these status bits will not be conveyed anyway
+
 #################
 # Check arguments
 #################
@@ -133,6 +142,8 @@ if($LASTEXITCODE -ne 0) {
     else { exit 0 }
 }
 
+$Status = $Status -band (-bnot 0x02); # Reset git/repository error status bit 
+
 ############
 # Remote URL
 ############
@@ -209,7 +220,10 @@ $Sha1 = TruncateString $Sha1 80
 #####################
 
 $UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
-if($UncommittedChanges.Length -eq 0) {$UncommittedChanges = "None"}
+if($UncommittedChanges.Length -eq 0) {
+    $UncommittedChanges = "None"
+    $Status = $Status -band (-bnot 0x04); # Reset uncommitted changes error status bit
+}
 elseif($OptionErrorOnUncommittedChanges) {
     Write-Warning "BuildVersion: Uncommitted changes detected. Please commit"
     exit 1
@@ -274,6 +288,7 @@ else {
             $ProjectMarcos[$i].Value = "Unknown"
         }
     }
+    $Status = $Status -band (-bnot 0x01); # Reset arguments error status bit
 }
 $BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
 
@@ -290,7 +305,7 @@ $BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
 ################
 $GitInit = "(URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail')"
 $ProjectInit = "(ASVersion:='$ASVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate)"
-$BuildVersionInit = "(Git:=$GitInit,Project:=$ProjectInit)"
+$BuildVersionInit = "(Status:=$Status,Git:=$GitInit,Project:=$ProjectInit)"
 
 ###################################
 # Check global variable declaration
