@@ -47,7 +47,7 @@ Upon successful installation, users will see BuildVersion messages in the output
     - *Experimental*
 	- Set the active configuration's version if the tag matches a `<major>.<minor>.<patch>` number format.
 - mappView Widgets
-    - *Coming soon*
+    - [BuildVersion Widget Library](https://github.com/br-na-pm/BuildVersionWidget#readme)
 
 ## Errors
 

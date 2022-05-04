@@ -209,7 +209,11 @@ $Sha1 = TruncateString $Sha1 80
 #####################
 
 $UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
-if($UncommittedChanges.Length -eq 0) {$UncommittedChanges = "None"}
+$ChangeWarning = 1
+if($UncommittedChanges.Length -eq 0) {
+    $UncommittedChanges = "None"
+    $ChangeWarning = 0
+}
 elseif($OptionErrorOnUncommittedChanges) {
     Write-Warning "BuildVersion: Uncommitted changes detected. Please commit"
     exit 1
@@ -288,7 +292,7 @@ $BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
 ################
 # Initialization
 ################
-$GitInit = "(URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail')"
+$GitInit = "(URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',ChangeWarning:=$ChangeWarning,CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail')"
 $ProjectInit = "(ASVersion:='$ASVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate)"
 $BuildVersionInit = "(Git:=$GitInit,Project:=$ProjectInit)"
 
