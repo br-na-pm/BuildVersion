@@ -14,7 +14,7 @@
 ###############
 # Please edit the "Parameters" section just below as you see fit
 # Pre-build event field (also in README):
-# PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 "$(WIN32_AS_PROJECT_PATH)" "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)"
+# PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) $(AS_VERSION) $(AS_USER_NAME) $(AS_PROJECT_NAME) $(AS_CONFIGURATION) $(AS_BUILD_MODE)
 
 $ScriptName = $MyInvocation.MyCommand.Name
 Write-Host "BuildVersion: Running $ScriptName powershell script"
@@ -57,6 +57,11 @@ if($args.Length -lt 1) {
 
 # Search for program
 $LogicalPath = $args[0] + "\Logical\"
+if(-not [System.IO.Directory]::Exists($LogicalPath)) {
+    Write-Warning "BuildVersion: Cannot resolve project's logical directory. Please check pre-build event."
+    if($OptionErrorOnArguments) { exit 1 } 
+    else { exit 0 }
+}
 $SearchProgram = Get-ChildItem -Path $LogicalPath -Filter $ProgramName -Recurse -Directory -Name
 if($SearchProgram.Length -ne 0) {
     $ProgramPath = $LogicalPath + $SearchProgram + "\"
