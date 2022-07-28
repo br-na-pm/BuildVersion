@@ -24,8 +24,10 @@ The information captured is automatically initialized to a local and/or global v
 - The pre-build event must be set for each configuration seeking version information
 
 ```powershell
-PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) $(AS_VERSION) $(AS_USER_NAME) $(AS_PROJECT_NAME) $(AS_CONFIGURATION) $(AS_BUILD_MODE)
+PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)"
 ```
+
+**NOTE**: The first variable argument after the file path, `$(WIN32_AS_PROJECT_PATH)`, is without quotes because it will resolve with quotes.  *For paths with spaces* (e.g. "C:\My Projects\WireBender") this call will fail when expicitely including quotes on the `$(WIN32_AS_PROJECT_PATH)` argument.
 
 ![Step 2 2022-04-10_13-49-32](https://user-images.githubusercontent.com/33841634/162637534-a7b174c9-fff3-4a81-9096-b1335f0e7f23.gif)
 
