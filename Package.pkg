@@ -7,4 +7,8 @@
     <Object Type="File" Description="Pre-build script">BuildVersion.ps1</Object>
     <Object Type="File" Description="Ignore files">.gitignore</Object>
   </Objects>
+  <Dependencies>
+    <Dependency ObjectName="ArEventLog" />
+    <Dependency ObjectName="AsBrStr" />
+  </Dependencies>
 </Package>
