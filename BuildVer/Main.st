@@ -18,7 +18,7 @@ PROGRAM _INIT
 			brsstrcat(ADR(Message), ADR(' Changes=TRUE'));
 		ELSE
 			WriteToLog.EventID := ArEventLogMakeEventID(arEVENTLOG_SEVERITY_INFO, 10, 100);
-			brsstrcat(ADR(Message), ADR(' Changes=TRUE'));
+			brsstrcat(ADR(Message), ADR(' Changes=FALSE'));
 		END_IF
 		WriteToLog.AddDataFormat := arEVENTLOG_ADDFORMAT_TEXT;
 		WriteToLog.AddDataSize := brsstrlen(ADR(Message)) + 1;
