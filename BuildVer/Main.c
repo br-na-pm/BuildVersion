@@ -8,8 +8,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-static char *stringCopy(char *destination, char *source, uint32_t size);
-static char *stringConcat(char *destination, char *source, uint32_t size);
+static void stringCopy(char *destination, char *source, uint32_t size);
+static void stringConcat(char *destination, char *source, uint32_t size);
 
 ArEventLogGetIdent_typ getLogIdent;
 ArEventLogWrite_typ writeToLog;
@@ -52,39 +52,25 @@ void _INIT ProgramInit(void) {
 	BuildVersion.Git.AdditionalCommits = BuildVersion.Git.AdditionalCommits;
 }
 
-/* Copies source to destination up to size (of destination) or source length. Returns destination */
-char *stringCopy(char *destination, char *source, uint32_t size) {
+/* Copies source to destination up to size (of destination) or source length */
+void stringCopy(char *destination, char *source, uint32_t size)
+{
+	uint32_t bytes_remaining = size - 1;
+	if (destination == NULL || source == NULL || size == 0) return;
 	
-	char *src = source, *dst = destination;
-	uint32_t bytesRemaining = size - 1;
-	
-	if(destination == NULL || source == NULL || size == 0) return destination;
-	*dst = '\0';
-	while(bytesRemaining) {
-		if(*src == '\0') {
-			*dst = '\0';
-			break;
-		}
-		*dst++ = *src++;
-		bytesRemaining--;
-		if(bytesRemaining == 0) *dst = '\0';
+	while (bytes_remaining--)
+	{
+		if (*source == '\0') break;
+		*destination++ = *source++;
 	}
-	return destination;
 	
+	*destination = '\0';
 }
 
-/* Concatentate source to destination up to size (of destination) or source length. Returns destination */
-char *stringConcat(char *destination, char *source, uint32_t size) {
-	char *dst = destination;
-	uint32_t bytesRemaining = size - 1, length;
-	
-	if(destination == NULL || source == NULL || size == 0) return destination;
-	length = strlen(destination);
-	if(length >= bytesRemaining) return destination;
-	dst += length;
-	bytesRemaining -= length;
-	stringCopy(dst, source, bytesRemaining + 1);
-	return destination;
-
-} /* End function */
+/* Concatentate source to destination up to size (of destination) or source length */
+void stringConcat(char *destination, char *source, uint32_t size)
+{
+	if (destination == NULL || source == NULL || size == 0) return;
+	strncat(destination, source, size - 1);
+}
 
