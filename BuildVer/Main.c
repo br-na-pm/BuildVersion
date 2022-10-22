@@ -8,42 +8,49 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-static void stringCopy(char *destination, char *source, uint32_t size);
-static void stringConcat(char *destination, char *source, uint32_t size);
+static void stringCopy(char *destination, uint32_t size, char *source);
+static void stringConcat(char *destination, uint32_t size, char *source);
 
 ArEventLogGetIdent_typ getLogIdent;
 ArEventLogWrite_typ writeToLog;
 char message[121];
 
 /* Program initialization */
-void _INIT ProgramInit(void) {
-	stringCopy(getLogIdent.Name, "$arlogusr", sizeof(getLogIdent.Name));
+void _INIT ProgramInit(void)
+{
+	stringCopy(getLogIdent.Name, sizeof(getLogIdent.Name), "$arlogusr");
 	getLogIdent.Execute = true;
-	do {
+	do 
+	{
 		ArEventLogGetIdent(&getLogIdent);
-	} while(!getLogIdent.Done && !getLogIdent.Error);
+	} 
+	while (!getLogIdent.Done && !getLogIdent.Error);
 	
 	writeToLog.Ident = getLogIdent.Ident;
-	stringCopy(message, "Project BuildVersion=", sizeof(message));
-	stringConcat(message, BuildVersion.Git.Version, sizeof(message));
-	stringConcat(message, " Branch=", sizeof(message));
-	stringConcat(message, BuildVersion.Git.Branch, sizeof(message));
-	if(BuildVersion.Git.ChangeWarning) {
+	stringCopy(message, sizeof(message), "Project BuildVersion=");
+	stringConcat(message, sizeof(message), BuildVersion.Git.Version);
+	stringConcat(message, sizeof(message), " Branch=");
+	stringConcat(message, sizeof(message), BuildVersion.Git.Branch);
+	if (BuildVersion.Git.ChangeWarning)
+	{
 		writeToLog.EventID = ArEventLogMakeEventID(arEVENTLOG_SEVERITY_WARNING, 10, 100);
-		stringConcat(message, " Changes=TRUE", sizeof(message));
+		stringConcat(message, sizeof(message), " Changes=TRUE");
 	}
-	else {
+	else 
+	{
 		writeToLog.EventID = ArEventLogMakeEventID(arEVENTLOG_SEVERITY_INFO, 10, 100);
-		stringConcat(message, " Changes=FALSE", sizeof(message));
+		stringConcat(message, sizeof(message), " Changes=FALSE");
 	}
 	writeToLog.AddDataFormat = arEVENTLOG_ADDFORMAT_TEXT;
 	writeToLog.AddDataSize = strlen(message) + 1;
 	writeToLog.AddData = (uint32_t)message;
-	stringCopy(writeToLog.ObjectID, "BuildVersion", sizeof(writeToLog.ObjectID));
+	stringCopy(writeToLog.ObjectID, sizeof(writeToLog.ObjectID), "BuildVersion");
 	writeToLog.Execute = true;
-	do {
+	do 
+	{
 		ArEventLogWrite(&writeToLog);
-	} while(!writeToLog.Done && !writeToLog.Error);
+	} 
+	while (!writeToLog.Done && !writeToLog.Error);
 	
 	getLogIdent.Execute = false;
 	ArEventLogGetIdent(&getLogIdent);
@@ -53,22 +60,19 @@ void _INIT ProgramInit(void) {
 }
 
 /* Copies source to destination up to size (of destination) or source length */
-void stringCopy(char *destination, char *source, uint32_t size)
+void stringCopy(char *destination, uint32_t size, char *source)
 {
-	uint32_t bytes_remaining = size - 1;
 	if (destination == NULL || source == NULL || size == 0) return;
 	
-	while (bytes_remaining--)
-	{
-		if (*source == '\0') break;
+	/* Copy, decrement first for size - 1 characters remaining */
+	while (--size && *source != '\0')
 		*destination++ = *source++;
-	}
 	
 	*destination = '\0';
 }
 
 /* Concatentate source to destination up to size (of destination) or source length */
-void stringConcat(char *destination, char *source, uint32_t size)
+void stringConcat(char *destination, uint32_t size, char *source)
 {
 	if (destination == NULL || source == NULL || size == 0) return;
 	strncat(destination, source, size - 1);
