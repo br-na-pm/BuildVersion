@@ -69,12 +69,17 @@ if(-not [System.IO.Directory]::Exists($LogicalPath)) {
     else { exit 0 }
 }
 $SearchProgram = Get-ChildItem -Path $LogicalPath -Filter $ProgramName -Recurse -Directory -Name
-if($SearchProgram.Length -ne 0) {
-    $ProgramPath = $LogicalPath + $SearchProgram + "\"
-    Write-Host "BuildVersion: Located $ProgramName program at $ProgramPath"
-    $LocalVariableFile = $ProgramPath + "Variables.var"
+$ProgramFound = $False
+for($i = 0; $i -lt $SearchProgram.Length; $i++) {
+    $ProgramPath = $LogicalPath + $SearchProgram[$i] + "\"
+    if([System.IO.File]::Exists($ProgramPath + "ANSIC.prg")) {
+        $ProgramFound = $True
+        Write-Host "BuildVersion: Located $ProgramName program at $ProgramPath"
+        $LocalVariableFile = $ProgramPath + "Variables.var"
+        break
+    }
 }
-else {
+if(-NOT $ProgramFound) {
     Write-Host "BuildVersion: Unable to locate $ProgramName in $LogicalPath"
     $ProgramPath = "BadPath"
     $LocalVariableFile = "BadPath"
