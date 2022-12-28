@@ -8,73 +8,73 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-static void stringCopy(char *destination, uint32_t size, char *source);
-static void stringConcat(char *destination, uint32_t size, char *source);
+static void StringCopy(char *Destination, uint32_t Size, char *Source);
+static void StringConcat(char *Destination, uint32_t Size, char *Source);
 
-ArEventLogGetIdent_typ getLogIdent;
-ArEventLogWrite_typ writeToLog;
-char message[121];
+ArEventLogGetIdent_typ GetLogbookIdent;
+ArEventLogWrite_typ WriteToLogbook;
+char Message[121];
 
 /* Program initialization */
 void _INIT ProgramInit(void)
 {
-	stringCopy(getLogIdent.Name, sizeof(getLogIdent.Name), "$arlogusr");
-	getLogIdent.Execute = true;
-	do 
-	{
-		ArEventLogGetIdent(&getLogIdent);
-	} 
-	while (!getLogIdent.Done && !getLogIdent.Error);
-	
-	writeToLog.Ident = getLogIdent.Ident;
-	stringCopy(message, sizeof(message), "Project BuildVersion=");
-	stringConcat(message, sizeof(message), BuildVersion.Git.Version);
-	stringConcat(message, sizeof(message), " Branch=");
-	stringConcat(message, sizeof(message), BuildVersion.Git.Branch);
-	if (BuildVersion.Git.ChangeWarning)
-	{
-		writeToLog.EventID = ArEventLogMakeEventID(arEVENTLOG_SEVERITY_WARNING, 10, 100);
-		stringConcat(message, sizeof(message), " Changes=TRUE");
+	/* Get User logbook ident */
+	StringCopy(GetLogbookIdent.Name, sizeof(GetLogbookIdent.Name), "$arlogusr");
+	GetLogbookIdent.Execute = true;
+	do {
+		ArEventLogGetIdent(&GetLogbookIdent);
 	}
-	else 
-	{
-		writeToLog.EventID = ArEventLogMakeEventID(arEVENTLOG_SEVERITY_INFO, 10, 100);
-		stringConcat(message, sizeof(message), " Changes=FALSE");
-	}
-	writeToLog.AddDataFormat = arEVENTLOG_ADDFORMAT_TEXT;
-	writeToLog.AddDataSize = strlen(message) + 1;
-	writeToLog.AddData = (uint32_t)message;
-	stringCopy(writeToLog.ObjectID, sizeof(writeToLog.ObjectID), "BuildVersion");
-	writeToLog.Execute = true;
-	do 
-	{
-		ArEventLogWrite(&writeToLog);
-	} 
-	while (!writeToLog.Done && !writeToLog.Error);
+	while(!GetLogbookIdent.Done && !GetLogbookIdent.Error);
 	
-	getLogIdent.Execute = false;
-	ArEventLogGetIdent(&getLogIdent);
-	writeToLog.Execute = false;
-	ArEventLogWrite(&writeToLog);
+	/* Write to User logbook */
+	WriteToLogbook.Ident = GetLogbookIdent.Ident;
+	StringCopy(Message, sizeof(Message), "BuildVersion=");
+	StringConcat(Message, sizeof(Message), BuildVersion.Git.Version);
+	StringConcat(Message, sizeof(Message), " Branch=");
+	StringConcat(Message, sizeof(Message), BuildVersion.Git.Branch);
+	if(BuildVersion.Git.ChangeWarning) {
+		WriteToLogbook.EventID = ArEventLogMakeEventID(arEVENTLOG_SEVERITY_WARNING, 400, 10000);
+		StringConcat(Message, sizeof(Message), " Changes=TRUE");
+	}
+	else {
+		WriteToLogbook.EventID = ArEventLogMakeEventID(arEVENTLOG_SEVERITY_INFO, 400, 10000);
+		StringConcat(Message, sizeof(Message), " Changes=FALSE");
+	}
+	WriteToLogbook.AddDataFormat = arEVENTLOG_ADDFORMAT_TEXT;
+	WriteToLogbook.AddDataSize = strlen(Message) + 1;
+	WriteToLogbook.AddData = (uint32_t)Message;
+	StringCopy(WriteToLogbook.ObjectID, sizeof(WriteToLogbook.ObjectID), "BuildVersion");
+	WriteToLogbook.Execute = true;
+	do {
+		ArEventLogWrite(&WriteToLogbook);
+	} 
+	while(!WriteToLogbook.Done && !WriteToLogbook.Error);
+	
+	GetLogbookIdent.Execute = false;
+	ArEventLogGetIdent(&GetLogbookIdent);
+	WriteToLogbook.Execute = false;
+	ArEventLogWrite(&WriteToLogbook);
+	
+	/* Use BuildVersion variable in task to register with OPCUA */
 	BuildVersion.Git.AdditionalCommits = BuildVersion.Git.AdditionalCommits;
 }
 
-/* Copies source to destination up to size (of destination) or source length */
-void stringCopy(char *destination, uint32_t size, char *source)
-{
-	if (destination == NULL || source == NULL || size == 0) return;
+/* Copy source to destination up to size (of destination) or source length */
+void StringCopy(char *Destination, uint32_t Size, char *Source) {
+	if(Destination == NULL || Source == NULL || Size == 0)
+		return;
 	
-	/* Copy, decrement first for size - 1 characters remaining */
-	while (--size && *source != '\0')
-		*destination++ = *source++;
+	/* Decrement first, loop up to size - 1 */
+	while(--Size && *Source != '\0')
+		*Destination++ = *Source++;
 	
-	*destination = '\0';
+	*Destination = '\0';
 }
 
-/* Concatentate source to destination up to size (of destination) or source length */
-void stringConcat(char *destination, uint32_t size, char *source)
-{
-	if (destination == NULL || source == NULL || size == 0) return;
-	strncat(destination, source, size - 1);
+/* Concatenate source to destination up to size (of destination) or source length */
+void StringConcat(char *Destination, uint32_t Size, char *Source) {
+	if(Destination == NULL || Source == NULL || Size == 0)
+		return;
+	
+	strncat(Destination, Source, Size - 1 - strlen(Destination));
 }
-
