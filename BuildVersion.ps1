@@ -68,11 +68,15 @@ if(-not [System.IO.Directory]::Exists($LogicalPath)) {
     if($OptionErrorOnArguments) { exit 1 } 
     else { exit 0 }
 }
+# Get all directories named $ProgramName
 $SearchProgram = Get-ChildItem -Path $LogicalPath -Filter $ProgramName -Recurse -Directory -Name
 $ProgramFound = $False
-for($i = 0; $i -lt $SearchProgram.Length; $i++) {
-    $ProgramPath = $LogicalPath + $SearchProgram[$i] + "\"
-    if([System.IO.File]::Exists($ProgramPath + "ANSIC.prg")) {
+# Loop through zero or more directories named $ProgramName
+foreach($SearchProgramItem in $SearchProgram) {
+    $ProgramPath = $LogicalPath + $SearchProgramItem + "\"
+    # Search for any file in this directory with extension .prg, indicating an Automation Studio program
+    $SearchProgramFile = Get-ChildItem -Path $ProgramPath -Filter "*.prg" -Name
+    if($SearchProgramFile.Count -ne 0) {
         $ProgramFound = $True
         Write-Host "BuildVersion: Located $ProgramName program at $ProgramPath"
         $LocalVariableFile = $ProgramPath + "Variables.var"
