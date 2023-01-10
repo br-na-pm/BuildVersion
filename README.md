@@ -1,4 +1,4 @@
-# BuildVersion
+# BuildVersion [![Made For B&R](https://github.com/hilch/BandR-badges/blob/main/Made-For-BrAutomation.svg)](https://www.br-automation.com)
 
 [BuildVersion](https://github.com/br-na-pm/BuildVersion#readme) is a software package for Automation Studio projects.  
 The package includes a PowerShell script to automatically capture version information during a build.  
