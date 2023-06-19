@@ -1,8 +1,12 @@
 
 TYPE
 	BuildVersionType : 	STRUCT  (*BuildVersion structure definition*)
+		Script : BuildVersionScriptType; (*Script member*)
 		Git : BuildVersionGitType; (*Git member*)
 		Project : BuildVersionProjectType; (*Project member*)
+	END_STRUCT;
+	BuildVersionScriptType : 	STRUCT  (*PowerShell information structure definition*)
+		BuiltWithGit : BOOL; (*TRUE Git structure and Project structure are updated FALSE Project structure is updated and Git structure is unmodified*)
 	END_STRUCT;
 	BuildVersionGitType : 	STRUCT  (*Git information structure definition*)
 		URL : STRING[255]; (*URL of git server referenced by the default remote "origin"*)
