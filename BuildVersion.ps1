@@ -47,7 +47,7 @@ if($args.Length -lt 1) {
     # Write-Warning output to the Automation Studio console is limited to 110 characters (AS 4.11.5.46 SP)
     Write-Warning "BuildVersion: Missing project path argument `$(WIN32_AS_PROJECT_PATH)"
     if($OptionErrorOnArguments) { exit 1 } 
-    else { exit 0 }
+    exit 0
 }
 
 # Debug
@@ -66,7 +66,7 @@ if(-not [System.IO.Directory]::Exists($LogicalPath)) {
     $Path = $args[0]
     Write-Warning "BuildVersion: Cannot find Logical folder in $Path"
     if($OptionErrorOnArguments) { exit 1 } 
-    else { exit 0 }
+    exit 0
 }
 # Get all directories named $ProgramName
 $Search = Get-ChildItem -Path $LogicalPath -Filter $ProgramName -Recurse -Directory -Name
@@ -161,7 +161,6 @@ function TruncateString {
 try {git version *> $Null} 
 catch {
     Write-Warning "BuildVersion: Git in not installed or unavailable in PATH environment"
-    Write-Warning "BuildVersion: Please install git (git-scm.com) with recommended options for PATH"
     if($OptionErrorOnRepositoryCheck) { exit 1 }
     else { exit 0 }
 }
@@ -170,7 +169,6 @@ catch {
 git -C $args[0] config --list --local *> $Null 
 if($LASTEXITCODE -ne 0) {
     Write-Warning "BuildVersion: No local repository has been found in the project root"
-    Write-Warning "BuildVersion: Please initialize a repository with git"
     if($OptionErrorOnRepositoryCheck) { exit 1 }
     else { exit 0 }
 }
@@ -196,8 +194,7 @@ $Url = TruncateString $Url 255
 
 $Branch = git -C $args[0] branch --show-current 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Warning "BuildVersion: The local repository appears to be in a headless state"
-    Write-Warning "BuildVersion: Please checkout a branch"
+    Write-Warning "BuildVersion: Local repository is in a headless state"
     $Branch = "Unknown"
 }
 $Branch = TruncateString $Branch 80
@@ -221,7 +218,7 @@ if($LASTEXITCODE -ne 0) {
 else {
     $Describe = git -C $args[0] describe --tags --long 2> $Null
     if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
-        Write-Warning "BuildVersion: Git describe is unable to determine # of additional commits"
+        Write-Warning "BuildVersion: Unable to determine # of additional commits"
         $AdditionalCommits = 0
         $Version = $Tag
     }
@@ -257,7 +254,7 @@ if($UncommittedChanges.Length -eq 0) {
     $ChangeWarning = 0
 }
 elseif($OptionErrorOnUncommittedChanges) {
-    Write-Warning "BuildVersion: Uncommitted changes detected. Please commit"
+    Write-Warning "BuildVersion: Uncommitted changes detected"
     exit 1
 }
 $UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
@@ -299,8 +296,7 @@ $CommitAuthorEmail = TruncateString $CommitAuthorEmail 80
 
 # Check arguments
 if($args.Length -ne 6) {
-    Write-Warning "BuildVersion: Missing arguments. Add arugments to pre-build event field"
-    Write-Warning "BuildVersion: See README for details and installation of pre-build event"
+    Write-Warning "BuildVersion: Missing or unknown arguments for project information"
     if($OptionErrorOnArguments) { exit 1 } 
     $ASVersion = "Unknown"
     $UserName = "Unknown"
