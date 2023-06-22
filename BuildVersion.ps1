@@ -117,66 +117,56 @@ function TruncateString {
 }
 
 ################################################################################
+# Git information
 ################################################################################
-################################################################################
-# Git Commands
-################################################################################
-################################################################################
-################################################################################
+
+# Assume true
+$BuiltWithGit = 1
 
 # Is git command available? Use `git version`
 try {git version *> $Null} 
 catch {
     Write-Warning "BuildVersion: Git in not installed or unavailable in PATH environment"
     if($OptionErrorOnRepositoryCheck) { exit 1 }
-    else { exit 0 }
+    $BuiltWithGit = 0
 }
 
 # Is the project in a repository? Use `git config --list --local`
 git -C $args[0] config --list --local *> $Null 
 if($LASTEXITCODE -ne 0) {
-    Write-Warning "BuildVersion: No local repository has been found in the project root"
+    if($BuiltWithGit) { Write-Warning "BuildVersion: No local repository has been found in the project root" }
     if($OptionErrorOnRepositoryCheck) { exit 1 }
-    else { exit 0 }
+    $BuiltWithGit = 0
 }
 
-############
 # Remote URL
-############
 # References:
 # https://reactgo.com/git-remote-url/
-
 $Url = git -C $args[0] config --get remote.origin.url 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Warning "BuildVersion: Git repository has no remote or differs from ""origin"""
+    if($BuiltWithGit) { Write-Warning "BuildVersion: Git repository has no remote or differs from ""origin""" }
     $Url = "Unknown"
 }
 $Url = TruncateString $Url 255
 
-########
 # Branch
-########
 # References:
 # https://stackoverflow.com/a/12142066 
-
 $Branch = git -C $args[0] branch --show-current 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Warning "BuildVersion: Local repository is in a headless state"
+    if($BuiltWithGit) { Write-Warning "BuildVersion: Local repository is in a headless state" }
     $Branch = "Unknown"
 }
 $Branch = TruncateString $Branch 80
 
-###################################
-# Tag, Additional Commits, Describe
-###################################
+# Tag, additional commits, describe
 # References:
 # "Most recent tag" https://stackoverflow.com/a/7261049
 # "Catching exceptions" https://stackoverflow.com/a/32287181
 # "Suppressing outputs" https://stackoverflow.com/a/57548278
-
 $Tag = git -C $args[0] describe --tags --abbrev=0 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Warning "BuildVersion: No tags have been created on this branch"
+    if($BuiltWithGit) { Write-Warning "BuildVersion: No tags have been created on this branch" }
     $Tag = "None"
     $Describe = "None"
     $AdditionalCommits = 0
@@ -185,7 +175,7 @@ if($LASTEXITCODE -ne 0) {
 else {
     $Describe = git -C $args[0] describe --tags --long 2> $Null
     if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
-        Write-Warning "BuildVersion: Unable to determine # of additional commits"
+        if($BuiltWithGit) { Write-Warning "BuildVersion: Unable to determine # of additional commits" }
         $AdditionalCommits = 0
         $Version = $Tag
     }
@@ -197,26 +187,24 @@ else {
 $Tag = TruncateString $Tag 80
 $Describe = TruncateString $Describe 80
 
-######
 # Sha1
-######
 # References:
 # https://www.systutorials.com/how-to-get-the-latest-git-commit-sha-1-in-a-repository/
-
 $Sha1 = git -C $args[0] rev-parse HEAD 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Warning "BuildVersion: Unable to determine latest secure hash"
+    if($BuiltWithGit) { Write-Warning "BuildVersion: Unable to determine latest secure hash" }
     $Sha1 = "Unknown"
 }
 $Sha1 = TruncateString $Sha1 80
 
-#####################
-# Uncommitted Changes
-#####################
-
-$UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
+# Uncommitted changes
 $ChangeWarning = 1
-if($UncommittedChanges.Length -eq 0) {
+$UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
+if($LASTEXITCODE -ne 0) {
+    $UncommittedChanges = "Unknown"
+    $ChangeWarning = 0
+}
+elseif($UncommittedChanges.Length -eq 0) {
     $UncommittedChanges = "None"
     $ChangeWarning = 0
 }
@@ -226,27 +214,21 @@ elseif($OptionErrorOnUncommittedChanges) {
 }
 $UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
 
-######
 # Date
-######
-
 $GitDate = git -C $args[0] log -1 --format=%cd --date=iso 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Warning "BuildVersion: Unable to determine latest commit date"
+    if($BuiltWithGit) { Write-Warning "BuildVersion: Unable to determine latest commit date" }
     $CommitDate = "2000-01-01-00:00:00"
 }
 else {$CommitDate = Get-Date $GitDate -Format "yyyy-MM-dd-HH:mm:ss"}
 
-##############################
-# Commit Author Name and Email
-##############################
+# Commit author name and email
 # References:
 # https://stackoverflow.com/a/41548774
-
 $CommitAuthorName = git -C $Args[0] log -1 --pretty=format:'%an' 2> $Null
 $CommitAuthorEmail = git -C $Args[0] log -1 --pretty=format:'%ae' 2> $Null
 if($LASTEXITCODE -ne 0) {
-    Write-Warning "BuildVersion: Unable to determine latest commit author"
+    if($BuiltWithGit) { Write-Warning "BuildVersion: Unable to determine latest commit author" }
     $CommitAuthorName = "Unknown"
     $CommitAuthorEmail = "Unknown"
 }
@@ -293,9 +275,10 @@ else {
 ################################################################################
 ################################################################################
 
-################
+
 # Initialization
-################
+$ScriptInitialization = "BuiltWithGit:=$BuiltWithGit"
+
 $GitInitialization = "URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',ChangeWarning:=$ChangeWarning,CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail'"
 
 $ProjectInitialization = "ASVersion:='$ASVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate"
@@ -360,10 +343,17 @@ Project \s* := \s* \( ( .+ ) \)
 "@
     $Match = [regex]::Match($Content, $Regex)
     if($Match.Success) {
+        # Debug
+        # for($i = 0; $i -lt $Match.Groups.Count; $i++) {
+        #     $Value = $Match.Groups[$i].Value
+        #     Write-Host "Debug BuildVersion: Match $i = $Value"
+        # }
         $Content = $Content.Replace($Match.Groups[1].Value, $ScriptName)
-        $Content = $Content.Replace($Match.Groups[2].Value, $BuildDate)
-        $Content = $Content.Replace($Match.Groups[4].Value, $GitInitialization)
+        $Content = $Content.Replace($Match.Groups[3].Value, $ScriptInitialization)
+        if($BuiltWithGit) { $Content = $Content.Replace($Match.Groups[4].Value, $GitInitialization) }
         $Content = $Content.Replace($Match.Groups[5].Value, $ProjectInitialization)
+        # Run this after replacing project information which also includes the build date
+        $Content = $Content.Replace($Match.Groups[2].Value, $BuildDate)
         Set-Content -Path $File $Content
         Write-Host "BuildVersion: $RelativeFile updated with build version information"
     }
