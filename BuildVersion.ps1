@@ -264,20 +264,47 @@ $GitInitialization = "URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommit
 
 $ProjectInitialization = "ASVersion:='$ASVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate"
 
-$BuildVersionInit = "(Git:=($GitInitialization),Project:=($ProjectInitialization))"
-
 ################################################################################
 # Global declaration
 ################################################################################
 $GlobalDeclarationFound = $False
 if([System.IO.File]::Exists($GlobalFile)) {
-    $GlobalVariableContent = Get-Content $GlobalFile
-    $GlobalVariableMatch = [regex]::Match($GlobalVariableContent, "([a-zA-Z_][a-zA-Z_0-9]+)\s*:\s*$TypeIdentifier\s*(:=[^;]+)?;")
-    if($GlobalVariableMatch.Success) {
-        $GlobalVariableIdentifier = $GlobalVariableMatch.Groups[1].Value
-        Write-Host "BuildVersion: Writing version information to $GlobalVariableIdentifier of type $TypeIdentifier in file $GlobalFile"
-        Set-Content -Path $GlobalFile $GlobalVariableContent.Replace($GlobalVariableMatch.Value, "$GlobalVariableIdentifier : $TypeIdentifier := $BuildVersionInit;")
-        $GlobalDeclarationFound = $True 
+    $Content = Get-Content $GlobalFile
+    $MatchDeclaration = [regex]::Match($Content, "(?x) (\w+) \s* : \s* $TypeIdentifier \s* (:= \s* \( (.+) \) \s*)? ;")
+    $Regex = @"
+(?x)
+\s*
+Script \s* := \s* \( ( .+ ) \)
+\s* , \s*
+Git \s* := \s* \( ( .+ ) \)
+\s* , \s*
+Project \s* := \s* \( ( .+ ) \)
+\s*
+"@
+    $MatchInitialization = [regex]::Match($MatchDeclaration.Groups[3].Value, $Regex)
+    if($MatchDeclaration.Success) {
+        $Name = $MatchDeclaration.Groups[1].Value
+        if($MatchInitialization.Success) {
+            # Debug
+            # for($i = 0; $i -lt $MatchInitialization.Groups.Count; $i++) {
+            #     $Value = $MatchInitialization.Groups[$i].Value
+            #     Write-Host "Debug BuildVersion: MatchInitialization $i = $Value"
+            # }
+            $Content = $Content.Replace($MatchInitialization.Groups[1].Value, $ScriptInitialization)
+            if($BuiltWithGit) { $Content = $Content.Replace($MatchInitialization.Groups[2].Value, $GitInitialization) }
+            $Content = $Content.Replace($MatchInitialization.Groups[3].Value, $ProjectInitialization)
+            Set-Content -Path $GlobalFile $Content
+            Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile updated with build information"
+        }
+        else {
+            $Content = $Content.Replace($MatchDeclaration.Value, "$Name : $TypeIdentifier := (Script:=($ScriptInitialization),Git:=($GitInitialization),Project:=($ProjectInitialization));")
+            Set-Content -Path $GlobalFile $Content
+            Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile overwritten with build version information"
+        }
+        $GlobalDeclarationFound = $True
+    }
+    else {
+        Write-Host "BuildVersion: No variable of type $TypeIdentifier found in $RelativeGlobalFile"
     }
 }
 
@@ -309,7 +336,7 @@ Script \s* := \s* \( ( .+ ) \)
 Git \s* := \s* \( ( .+ ) \)
 \s* , \s*
 Project \s* := \s* \( ( .+ ) \)
-\) \s* ;
+\s* \) \s* ;
 "@
     $Match = [regex]::Match($Content, $Regex)
     if($Match.Success) {
