@@ -9,19 +9,19 @@
 #   2022-03-21
 ################################################################################
 
-###############
-# Note to users
-###############
+$ScriptName = $MyInvocation.MyCommand.Name
+Write-Host "BuildVersion: Running $ScriptName powershell script"
+
+################################################################################
+# Note
+################################################################################
 # Please edit the "Parameters" section just below as you see fit
 # Pre-build event field (also in README):
 # PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)"
 
-$ScriptName = $MyInvocation.MyCommand.Name
-Write-Host "BuildVersion: Running $ScriptName powershell script"
-
-############
+################################################################################
 # Parameters
-############
+################################################################################
 # The script will search under Logical to find this program (e.g. .\Logical\BuildVersion\BuildVer)
 $ProgramName = "BuildVer"
 # The script will search under Logical to find this variable file (e.g. .\Logical\Global.var)
@@ -39,9 +39,14 @@ $OptionErrorOnUncommittedChanges = $False
 # Create build error if neither a local or global variable is initialized with version information
 $OptionErrorIfNoInitialization = $False
 
-#################
-# Check arguments
-#################
+################################################################################
+# Check project
+################################################################################
+# Debug
+# for($i = 0; $i -lt $args.Length; $i++) {
+#     $Value = $args[$i]
+#     Write-Host "Debug BuildVersion: Argument $i = $Value"
+# }
 
 if($args.Length -lt 1) {
     # Write-Warning output to the Automation Studio console is limited to 110 characters (AS 4.11.5.46 SP)
@@ -50,17 +55,6 @@ if($args.Length -lt 1) {
     exit 0
 }
 
-# Debug
-# for($i = 0; $i -lt $args.Length; $i++) {
-#     $ArgumentValue = $args[$i]
-#     Write-Host "Argument $i : $ArgumentValue"
-# }
-
-######################
-# Search and set paths
-######################
-
-# Search for program
 $LogicalPath = $args[0] + "\Logical\"
 if(-not [System.IO.Directory]::Exists($LogicalPath)) {
     $Path = $args[0]
@@ -68,7 +62,11 @@ if(-not [System.IO.Directory]::Exists($LogicalPath)) {
     if($OptionErrorOnArguments) { exit 1 } 
     exit 0
 }
-# Get all directories named $ProgramName
+
+################################################################################
+# Search
+################################################################################
+# Search for directories named $ProgramName
 $Search = Get-ChildItem -Path $LogicalPath -Filter $ProgramName -Recurse -Directory -Name
 $ProgramFound = $False
 # Loop through zero or more directories named $ProgramName
@@ -104,21 +102,14 @@ if(-not $GlobalFileFound) {
     Write-Host "BuildVersion: Unable to locate $GlobalDeclarationName in $LogicalPath"
 }
 
-$BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
-
-###########
-# Functions
-###########
-
+################################################################################
+# Git information
+################################################################################
 # Truncate strings to match size of type declaration
 function TruncateString {
     param ([String]$String,[Int]$Length)
     $String.Substring(0,[System.Math]::Min($Length,$String.Length))
 }
-
-################################################################################
-# Git information
-################################################################################
 
 # Assume true
 $BuiltWithGit = 1
@@ -236,12 +227,9 @@ $CommitAuthorName = TruncateString $CommitAuthorName 80
 $CommitAuthorEmail = TruncateString $CommitAuthorEmail 80
 
 ################################################################################
+# Project information
 ################################################################################
-################################################################################
-# Project References
-################################################################################
-################################################################################
-################################################################################
+$BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
 
 # Check arguments
 if($args.Length -ne 6) {
@@ -268,15 +256,8 @@ else {
 }
 
 ################################################################################
-################################################################################
-################################################################################
-# Output
-################################################################################
-################################################################################
-################################################################################
-
-
 # Initialization
+################################################################################
 $ScriptInitialization = "BuiltWithGit:=$BuiltWithGit"
 
 $GitInitialization = "URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',ChangeWarning:=$ChangeWarning,CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail'"
@@ -285,10 +266,10 @@ $ProjectInitialization = "ASVersion:='$ASVersion',UserName:='$UserName',ProjectN
 
 $BuildVersionInit = "(Git:=($GitInitialization),Project:=($ProjectInitialization))"
 
-###################################
-# Check global variable declaration
-###################################
-$GlobalOption = $False
+################################################################################
+# Global declaration
+################################################################################
+$GlobalDeclarationFound = $False
 if([System.IO.File]::Exists($GlobalFile)) {
     $GlobalVariableContent = Get-Content $GlobalFile
     $GlobalVariableMatch = [regex]::Match($GlobalVariableContent, "([a-zA-Z_][a-zA-Z_0-9]+)\s*:\s*$TypeIdentifier\s*(:=[^;]+)?;")
@@ -296,24 +277,13 @@ if([System.IO.File]::Exists($GlobalFile)) {
         $GlobalVariableIdentifier = $GlobalVariableMatch.Groups[1].Value
         Write-Host "BuildVersion: Writing version information to $GlobalVariableIdentifier of type $TypeIdentifier in file $GlobalFile"
         Set-Content -Path $GlobalFile $GlobalVariableContent.Replace($GlobalVariableMatch.Value, "$GlobalVariableIdentifier : $TypeIdentifier := $BuildVersionInit;")
-        $GlobalOption = $True 
+        $GlobalDeclarationFound = $True 
     }
 }
 
-####################################
-# Generate Variable Declaration File
-####################################
-
-if((-not $GlobalOption) -and (-not $ProgramFound)) {
-    Write-Host "BuildVersion: Version information not initialized. Create ST program $ProgramName or declare variable of type $TypeIdentifier in $GlobalDeclarationName"
-    if($OptionErrorIfNoInitialization) { exit 1 }
-    else { exit 0 }
-}
-
 ################################################################################
-# Local Declaration File
+# Local Declaration
 ################################################################################
-
 # Read and search text in Variables.var in $ProgramName
 if($ProgramFound) {
     # Read
@@ -332,7 +302,7 @@ if($ProgramFound) {
 \(\*This \s file \s was \s automatically \s generated \s by \s ([\w\d\.]+) \s on \s ([\d-:]+)\.\*\) [\s\r\n]+
 .+ [\s\r\n]+
 .+ [\s\r\n]+
-\s* BuildVersion \s* : \s* BuildVersionType \s*
+\s* BuildVersion \s* : \s* $TypeIdentifier \s*
 := \s* \( \s*
 Script \s* := \s* \( ( .+ ) \)
 \s* , \s*
@@ -370,42 +340,13 @@ END_VAR
     }
 }
 
-#############################
-# Write configuration version
-#############################
-
-# EXPERIMENTAL
-# NOTE: Writing to the Hardware.hw causes the build and Automation Studio to hang up for several seconds
-
-# $TagRegex = "\d{1,2}\.\d{1,2}\.\d{1,2}"
-# $TagMatch = [regex]::Match($Tag, $TagRegex)
-# $TagMatchValue = $TagMatch.Value
-# if($TagMatch.Success) {
-#     $HardwareFile = $args[0] + "\Physical\" + $args[4] + "\Hardware.hw"
-#     if([System.IO.File]::Exists($HardwareFile)) {
-#         $HardwareContent = Get-Content $HardwareFile
-#         $HardwareVersionMatch = [regex]::Match($HardwareContent, "<Parameter\s*ID=""ConfigVersion""\s*Value=""($TagRegex)""\s*/>")
-#         $HardwareIDMatch = [regex]::Match($HardwareContent, "<Parameter\s*ID=""ConfigurationID""\s*Value=""[a-zA-Z_][a-zA-Z_0-9]+""\s*/>")
-#         if($HardwareVersionMatch.Success) {
-#             if($HardwareVersionMatch.Groups[1].Value -ne $TagMatchValue) {
-#                 $NewVersion = $HardwareVersionMatch.Value.Replace($HardwareVersionMatch.Groups[1].Value, $TagMatchValue)
-#                 $FileContent = $HardwareContent.Replace($HardwareVersionMatch.Value, $NewVersion)
-#                 Write-Host "BuildVersion: Setting configuration version to $TagMatchValue"
-#                 # Either option seems to work
-#                 # $FileContent | Out-File -FilePath $HardwareFile -Encoding UTF8
-#                 # Set-Content -Path $HardwareFile -Encoding UTF8 -Value $FileContent
-#             }
-#         }
-#         elseif($HardwareIDMatch.Success) {
-#             $VersionAndIDParameter = $HardwareIDMatch.Value + "`r`n    <Parameter ID=""ConfigVersion"" Value=""$TagMatchValue"" />"
-#             $FileContent = $HardwareContent.Replace($HardwareIDMatch.Value, $VersionAndIDParameter)
-#             Write-Host "BuildVersion: Adding configuration version $TagMatchValue"
-#             # Either option seems to work
-#             # $FileContent | Out-File -FilePath $HardwareFile -Encoding UTF8
-#             # Set-Content -Path $HardwareFile -Encoding UTF8 -Value $FileContent
-#         }
-#     }
-# }
-
+################################################################################
 # Complete
-Write-Host "BuildVersion: Completed $ScriptName powershell script"
+################################################################################
+if((-not $GlobalDeclarationFound) -and (-not $ProgramFound)) {
+    Write-Warning "BuildVersion: No local or global build version information has been initialized"
+    if($OptionErrorIfNoInitialization) { exit 1 }
+}
+else {
+    Write-Host "BuildVersion: Completed $ScriptName powershell script"
+}
