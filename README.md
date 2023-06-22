@@ -8,6 +8,19 @@ The information captured is automatically initialized to a local and/or global v
 
 ![Initialize build version 2022-03-31_12 27 13](https://user-images.githubusercontent.com/33841634/161134786-7ea1422b-55c4-4f49-a427-3e261ded259d.png)
 
+## Features
+
+- Read git information (only if git repository is detected)
+  - Branch, tag, hash, date, etc.
+  - Git initialization values remain unmodified if no repository is detected
+- Read project information
+  - Configuration, build, date, etc.
+- Update local and/or global variable initialization
+  - `BuildVersion` variable in the BuildVer program is automatically initialized
+  - The first variable of type `BuildVersionType` in Global.var is automatically initialized
+- mappView widget integration
+  - See [BuildVersion Widget Library](https://github.com/br-na-pm/BuildVersionWidget#readme)
+
 ## Installation
 
 #### 1. Add Package to Project
@@ -34,22 +47,6 @@ PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildV
 Upon successful installation, users will see BuildVersion messages in the output results when building.
 
 ![BuildVersion output results 2022-04-10_13 48 16](https://user-images.githubusercontent.com/33841634/162637580-277bd6a0-d40b-4da7-bd82-3082ee8f065e.png)
-
-## Features
-
-- Local Variable Initialization
-    - Following the [installation](#installation) instructions above, the local variable `BuildVersion` in the BuildVer program is automatically initialized with version information on any build. 
-    - The entire variable declaration file is overwritten and automatically ignored by git to avoid frequent differences.
-- Global Variable Initialization
-    - Declare a variable with type `BuildVersionType` in the Global.var file. 
-    - The BuildVersion package will search for any variable of this type and initialize it with the version information on any build. 
-    - A confirmation message is written to the console regarding which variable was initialized.
-    - Aside from the variable of type `BuildVersionType`, the Global.var file remains unchanged.
-- Configuration Version
-    - *Experimental*
-	- Set the active configuration's version if the tag matches a `<major>.<minor>.<patch>` number format.
-- mappView Widgets
-    - [BuildVersion Widget Library](https://github.com/br-na-pm/BuildVersionWidget#readme)
 
 ## Errors
 
@@ -99,6 +96,18 @@ $OptionErrorOnRepositoryCheck = $False
 $OptionErrorOnUncommittedChanges = $False
 # Create build error if neither a local or global variable is initialized with version information
 $OptionErrorIfNoInitialization = $False
+```
+
+To run multiple commands in the pre-build event, use the follow syntax.
+
+```powershell
+<command_1> & <command_2>
+```
+
+For example, users can test the build script without building the whole project with the following example.  An error is forced at the end of the pre-build step.
+
+```powershell
+PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)" & exit 1
 ```
 
 ## Build 
