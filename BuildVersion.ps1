@@ -270,8 +270,14 @@ $ProjectInitialization = "ASVersion:='$ASVersion',UserName:='$UserName',ProjectN
 $GlobalDeclarationFound = $False
 if([System.IO.File]::Exists($GlobalFile)) {
     $Content = Get-Content $GlobalFile
+    # Protect empty file
+    if($Content.Length -eq 0) {$Content = " "}
+    # Match global declaration
     $MatchDeclaration = [regex]::Match($Content, "(?x) (\w+) \s* : \s* $TypeIdentifier \s* (:= \s* \( (.+) \) \s*)? ;")
-    $Regex = @"
+    if($MatchDeclaration.Success) {
+        $Name = $MatchDeclaration.Groups[1].Value
+        # Match build version initialization
+        $Regex = @"
 (?x)
 \s*
 Script \s* := \s* \( ( .+ ) \)
@@ -281,9 +287,7 @@ Git \s* := \s* \( ( .+ ) \)
 Project \s* := \s* \( ( .+ ) \)
 \s*
 "@
-    $MatchInitialization = [regex]::Match($MatchDeclaration.Groups[3].Value, $Regex)
-    if($MatchDeclaration.Success) {
-        $Name = $MatchDeclaration.Groups[1].Value
+        $MatchInitialization = [regex]::Match($MatchDeclaration.Groups[3].Value, $Regex)
         if($MatchInitialization.Success) {
             # Debug
             # for($i = 0; $i -lt $MatchInitialization.Groups.Count; $i++) {
@@ -294,7 +298,7 @@ Project \s* := \s* \( ( .+ ) \)
             if($BuiltWithGit) { $Content = $Content.Replace($MatchInitialization.Groups[2].Value, $GitInitialization) }
             $Content = $Content.Replace($MatchInitialization.Groups[3].Value, $ProjectInitialization)
             Set-Content -Path $GlobalFile $Content
-            Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile updated with build information"
+            Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile updated with build version information"
         }
         else {
             $Content = $Content.Replace($MatchDeclaration.Value, "$Name : $TypeIdentifier := (Script:=($ScriptInitialization),Git:=($GitInitialization),Project:=($ProjectInitialization));")
@@ -318,10 +322,12 @@ if($ProgramFound) {
     $RelativeFile = $File.Replace($LogicalPath, ".\Logical\")
     if([System.IO.File]::Exists($File)) {
         $Content = Get-Content $File
+        # Protect empty string
+        if($Content.Length -eq 0) {$Content = " "}
     }
     else {
         # Force empty read
-        $Content = ""
+        $Content = " "
     }
     # Search
     $Regex = @"
