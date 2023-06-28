@@ -75,8 +75,9 @@ foreach($SearchItem in $Search) {
     # Search for any file in this directory with extension .prg
     $SubSearch = Get-ChildItem -Path $ProgramPath -Filter "*.prg" -Name
     # If there is at least one *.prg file assume Automation Studio program
-    if($SubSearch.Count -ne 0) {
+    if($SubSearch.Count -eq 1) {
         $ProgramFound = $True
+        $PackageFile = $ProgramPath + $SubSearch
         $RelativeProgramPath = $ProgramPath.Replace($LogicalPath, ".\Logical\")
         Write-Host "BuildVersion: Located $ProgramName program at $RelativeProgramPath"
         break
@@ -367,6 +368,23 @@ END_VAR
 "@
         Set-Content -Path $File $Content
         Write-Host "BuildVersion: $RelativeFile overwritten with build version information"
+    }
+
+    # Register Variables.var in package definition
+    if([System.IO.File]::Exists($PackageFile)) {
+        $Content = Get-Content -Raw $PackageFile
+        $Regex = "Variables\.var"
+        $Match = [regex]::Match($Content, $Regex)
+        if(-not $Match.Success) {
+            $Regex = "(?x) <Files> ((?:.|\n)*) </Files>"
+            $Match = [regex]::Match($Content, $Regex)
+            if($Match.Success) {
+                $Append = "`  <File Description=""Local variables"" Private=""true"">Variables.var</File>`r`n  "
+                $Content = $Content.Replace($Match.Groups[1].Value, $Match.Groups[1].Value + $Append)
+                Set-Content -Path $PackageFile -Encoding utf8 -NoNewLine $Content
+                Write-Host "BuildVersion: Register $RelativeProgramPath Variable.var with package"
+            }
+        }
     }
 }
 
