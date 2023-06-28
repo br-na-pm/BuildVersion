@@ -269,7 +269,7 @@ $ProjectInitialization = "ASVersion:='$ASVersion',UserName:='$UserName',ProjectN
 ################################################################################
 $GlobalDeclarationFound = $False
 if([System.IO.File]::Exists($GlobalFile)) {
-    $Content = Get-Content $GlobalFile
+    $Content = Get-Content -Raw $GlobalFile
     # Protect empty file
     if($Content.Length -eq 0) {$Content = " "}
     # Match global declaration
@@ -279,13 +279,11 @@ if([System.IO.File]::Exists($GlobalFile)) {
         # Match build version initialization
         $Regex = @"
 (?x)
-\s*
 Script \s* := \s* \( ( .+ ) \)
 \s* , \s*
 Git \s* := \s* \( ( .+ ) \)
 \s* , \s*
 Project \s* := \s* \( ( .+ ) \)
-\s*
 "@
         $MatchInitialization = [regex]::Match($MatchDeclaration.Groups[3].Value, $Regex)
         if($MatchInitialization.Success) {
@@ -321,7 +319,7 @@ if($ProgramFound) {
     $File = $ProgramPath + "Variables.var"
     $RelativeFile = $File.Replace($LogicalPath, ".\Logical\")
     if([System.IO.File]::Exists($File)) {
-        $Content = Get-Content $File
+        $Content = Get-Content -Raw $File
         # Protect empty string
         if($Content.Length -eq 0) {$Content = " "}
     }
@@ -332,10 +330,9 @@ if($ProgramFound) {
     # Search
     $Regex = @"
 (?x)
-\(\*This \s file \s was \s automatically \s generated \s by \s ([\w\d\.]+) \s on \s ([\d-:]+)\.\*\) [\s\r\n]+
-.+ [\s\r\n]+
-.+ [\s\r\n]+
-\s* BuildVersion \s* : \s* $TypeIdentifier \s*
+\(\*This \s file \s was \s automatically \s generated \s by \s ([\w\d\.]+) \s on \s ([\d-:]+)\.\*\) 
+(?:.|\n)*
+BuildVersion \s* : \s* $TypeIdentifier \s*
 := \s* \( \s*
 Script \s* := \s* \( ( .+ ) \)
 \s* , \s*
