@@ -112,11 +112,11 @@ function TruncateString {
     $String.Substring(0,[System.Math]::Min($Length,$String.Length))
 }
 
-# Assume true
-$BuiltWithGit = 1
-
 # Is git command available? Use `git version`
-try {git version *> $Null} 
+try {
+    git version *> $Null
+    $BuiltWithGit = 1
+} 
 catch {
     Write-Warning "BuildVersion: Git in not installed or unavailable in PATH environment"
     if($OptionErrorOnRepositoryCheck) { exit 1 }
@@ -124,19 +124,27 @@ catch {
 }
 
 # Is the project in a repository? Use `git config --list --local`
-git -C $args[0] config --list --local *> $Null 
-if($LASTEXITCODE -ne 0) {
-    if($BuiltWithGit) { Write-Warning "BuildVersion: No local repository has been found in the project root" }
-    if($OptionErrorOnRepositoryCheck) { exit 1 }
-    $BuiltWithGit = 0
+try { 
+    git -C $args[0] config --list --local *> $Null
+    if($LASTEXITCODE -ne 0) {
+        Write-Warning "BuildVersion: No local repository has been found in the project root"
+        if($OptionErrorOnRepositoryCheck) { exit 1 }
+        $BuiltWithGit = 0
+    }
 }
+catch {}
 
 # Remote URL
 # References:
 # https://reactgo.com/git-remote-url/
-$Url = git -C $args[0] config --get remote.origin.url 2> $Null
-if($LASTEXITCODE -ne 0) {
-    if($BuiltWithGit) { Write-Warning "BuildVersion: Git repository has no remote or differs from ""origin""" }
+try {
+    $Url = git -C $args[0] config --get remote.origin.url 2> $Null
+    if($LASTEXITCODE -ne 0) {
+        Write-Warning "BuildVersion: Git repository has no remote or differs from ""origin"""
+        $Url = "Unknown"
+    }
+}
+catch {
     $Url = "Unknown"
 }
 $Url = TruncateString $Url 255
@@ -144,9 +152,14 @@ $Url = TruncateString $Url 255
 # Branch
 # References:
 # https://stackoverflow.com/a/12142066 
-$Branch = git -C $args[0] branch --show-current 2> $Null
-if($LASTEXITCODE -ne 0) {
-    if($BuiltWithGit) { Write-Warning "BuildVersion: Local repository is in a headless state" }
+try {
+    $Branch = git -C $args[0] branch --show-current 2> $Null
+    if($LASTEXITCODE -ne 0) {
+        Write-Warning "BuildVersion: Local repository is in a headless state"
+        $Branch = "Unknown"
+    }
+}
+catch {
     $Branch = "Unknown"
 }
 $Branch = TruncateString $Branch 80
@@ -156,25 +169,33 @@ $Branch = TruncateString $Branch 80
 # "Most recent tag" https://stackoverflow.com/a/7261049
 # "Catching exceptions" https://stackoverflow.com/a/32287181
 # "Suppressing outputs" https://stackoverflow.com/a/57548278
-$Tag = git -C $args[0] describe --tags --abbrev=0 2> $Null
-if($LASTEXITCODE -ne 0) {
-    if($BuiltWithGit) { Write-Warning "BuildVersion: No tags have been created on this branch" }
+try {
+    $Tag = git -C $args[0] describe --tags --abbrev=0 2> $Null
+    if($LASTEXITCODE -ne 0) {
+        Write-Warning "BuildVersion: No tags have been created on this branch"
+        $Tag = "None"
+        $Describe = "None"
+        $AdditionalCommits = 0
+        $Version = "None"
+    }
+    else {
+        $Describe = git -C $args[0] describe --tags --long 2> $Null
+        if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
+            Write-Warning "BuildVersion: Unable to determine # of additional commits"
+            $AdditionalCommits = 0
+            $Version = $Tag
+        }
+        else {
+            $AdditionalCommits = $Describe.Replace($Tag,"").Split("-")[1]
+            $Version = $Tag + "-" + $AdditionalCommits
+        }
+    }
+}
+catch {
     $Tag = "None"
     $Describe = "None"
     $AdditionalCommits = 0
     $Version = "None"
-}
-else {
-    $Describe = git -C $args[0] describe --tags --long 2> $Null
-    if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
-        if($BuiltWithGit) { Write-Warning "BuildVersion: Unable to determine # of additional commits" }
-        $AdditionalCommits = 0
-        $Version = $Tag
-    }
-    else {
-        $AdditionalCommits = $Describe.Replace($Tag,"").Split("-")[1]
-        $Version = $Tag + "-" + $AdditionalCommits
-    }
 }
 $Tag = TruncateString $Tag 80
 $Describe = TruncateString $Describe 80
@@ -182,45 +203,69 @@ $Describe = TruncateString $Describe 80
 # Sha1
 # References:
 # https://www.systutorials.com/how-to-get-the-latest-git-commit-sha-1-in-a-repository/
-$Sha1 = git -C $args[0] rev-parse HEAD 2> $Null
-if($LASTEXITCODE -ne 0) {
-    if($BuiltWithGit) { Write-Warning "BuildVersion: Unable to determine latest secure hash" }
+try {
+    $Sha1 = git -C $args[0] rev-parse HEAD 2> $Null
+    if($LASTEXITCODE -ne 0) {
+        Write-Warning "BuildVersion: Unable to determine latest secure hash"
+        $Sha1 = "Unknown"
+    }
+}
+catch {
     $Sha1 = "Unknown"
 }
 $Sha1 = TruncateString $Sha1 80
 
 # Uncommitted changes
 $ChangeWarning = 1
-$UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
-if($LASTEXITCODE -ne 0) {
+try {
+    $UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
+    if($LASTEXITCODE -ne 0) {
+        $UncommittedChanges = "Unknown"
+        $ChangeWarning = 0
+    }
+    elseif($UncommittedChanges.Length -eq 0) {
+        $UncommittedChanges = "None"
+        $ChangeWarning = 0
+    }
+    elseif($OptionErrorOnUncommittedChanges) {
+        Write-Warning "BuildVersion: Uncommitted changes detected"
+        exit 1
+    }
+}
+catch {
     $UncommittedChanges = "Unknown"
     $ChangeWarning = 0
-}
-elseif($UncommittedChanges.Length -eq 0) {
-    $UncommittedChanges = "None"
-    $ChangeWarning = 0
-}
-elseif($OptionErrorOnUncommittedChanges) {
-    Write-Warning "BuildVersion: Uncommitted changes detected"
-    exit 1
 }
 $UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
 
 # Date
-$GitDate = git -C $args[0] log -1 --format=%cd --date=iso 2> $Null
-if($LASTEXITCODE -ne 0) {
-    if($BuiltWithGit) { Write-Warning "BuildVersion: Unable to determine latest commit date" }
+try {
+    $GitDate = git -C $args[0] log -1 --format=%cd --date=iso 2> $Null
+    if($LASTEXITCODE -ne 0) {
+        Write-Warning "BuildVersion: Unable to determine latest commit date"
+        $CommitDate = "2000-01-01-00:00:00"
+    }
+    else {
+        $CommitDate = Get-Date $GitDate -Format "yyyy-MM-dd-HH:mm:ss"
+    }
+}
+catch {
     $CommitDate = "2000-01-01-00:00:00"
 }
-else {$CommitDate = Get-Date $GitDate -Format "yyyy-MM-dd-HH:mm:ss"}
 
 # Commit author name and email
 # References:
 # https://stackoverflow.com/a/41548774
-$CommitAuthorName = git -C $Args[0] log -1 --pretty=format:'%an' 2> $Null
-$CommitAuthorEmail = git -C $Args[0] log -1 --pretty=format:'%ae' 2> $Null
-if($LASTEXITCODE -ne 0) {
-    if($BuiltWithGit) { Write-Warning "BuildVersion: Unable to determine latest commit author" }
+try {
+    $CommitAuthorName = git -C $Args[0] log -1 --pretty=format:'%an' 2> $Null
+    $CommitAuthorEmail = git -C $Args[0] log -1 --pretty=format:'%ae' 2> $Null
+    if($LASTEXITCODE -ne 0) {
+        Write-Warning "BuildVersion: Unable to determine latest commit author"
+        $CommitAuthorName = "Unknown"
+        $CommitAuthorEmail = "Unknown"
+    }
+}
+catch {
     $CommitAuthorName = "Unknown"
     $CommitAuthorEmail = "Unknown"
 }
