@@ -199,6 +199,7 @@ catch {
 }
 $Tag = TruncateString $Tag 80
 $Describe = TruncateString $Describe 80
+$Version = TruncateString $Version 80 
 
 # Sha1
 # References:
@@ -216,7 +217,6 @@ catch {
 $Sha1 = TruncateString $Sha1 80
 
 # Uncommitted changes
-$ChangeWarning = 1
 try {
     $UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
     if($LASTEXITCODE -ne 0) {
@@ -227,9 +227,10 @@ try {
         $UncommittedChanges = "None"
         $ChangeWarning = 0
     }
-    elseif($OptionErrorOnUncommittedChanges) {
+    else {
         Write-Warning "BuildVersion: Uncommitted changes detected"
-        exit 1
+        if($OptionErrorOnUncommittedChanges) { exit 1 }
+        $ChangeWarning = 1
     }
 }
 catch {
