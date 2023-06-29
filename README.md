@@ -1,23 +1,23 @@
-# BuildVersion [![Made For B&R](https://github.com/hilch/BandR-badges/blob/main/Made-For-BrAutomation.svg)](https://www.br-automation.com)
+# BuildVersion [![Made For B&R](https://raw.githubusercontent.com/hilch/BandR-badges/main/Made-For-BrAutomation.svg)](https://www.br-automation.com)
 
-[BuildVersion](https://github.com/br-na-pm/BuildVersion#readme) is a software package for Automation Studio projects.  
-The package includes a PowerShell script to automatically capture version information during a build.  
+[BuildVersion](https://github.com/br-na-pm/BuildVersion#readme) is a software package for [Automation Studio](https://www.br-automation.com/en/products/software/automation-software/automation-studio/) projects.  
+The package includes a [PowerShell](https://learn.microsoft.com/en/powershell/) script to automatically capture version information during a build.  
 The script is intended for use with the version control system [git](https://git-scm.com/).  
-The information captured is automatically initialized to a local and/or global variable in the project.  
 **NOTE:** This is not an official package. BuildVersion is provided as-is under the GNU GPL v3.0 license agreement.  
 
 ![Initialize build version 2022-03-31_12 27 13](https://user-images.githubusercontent.com/33841634/161134786-7ea1422b-55c4-4f49-a427-3e261ded259d.png)
 
 ## Features
 
-- Read git information (only if git repository is detected)
-  - Branch, tag, hash, date, etc.
-  - Git initialization values remain unmodified if no repository is detected
-- Read project information
-  - Configuration, build, date, etc.
-- Update local and/or global variable initialization
-  - `BuildVersion` variable in the BuildVer program is automatically initialized
-  - The first variable of type `BuildVersionType` in Global.var is automatically initialized
+- Use with and without git
+  - Git version information will only be updated if a git repository is detected 
+- PowerShell script will not error the Automation Studio build
+  - A pre-build event is required to run the PowerShell script
+- Capture git repository information and Automation Studio project information
+- Initialize local variable
+  - **Variables.var** in **BuildVer** task located anywhere in **Logical** folder
+- Initialize global variable
+  - First variable of **BuildVersionType** in **Global.var** located anywhere in **Logical** folder
 - mappView widget integration
   - See [BuildVersion Widget Library](https://github.com/br-na-pm/BuildVersionWidget#readme)
 
@@ -26,21 +26,22 @@ The information captured is automatically initialized to a local and/or global v
 #### 1. Add Package to Project
 
 - [Download](https://github.com/br-na-pm/BuildVersion/releases/latest/download/BuildVersion.zip) and extract the BuildVersion package
-- Select Existing Package from the Automation Studio toolbox to import BuildVersion into logical view
+- Logical View -> select project folder -> Toolbox -> Existing Package -> import BuildVersion
 
 ![Step 1 2022-04-10_13-37-35](https://user-images.githubusercontent.com/33841634/162637472-ddf53ad9-52b9-4f34-935c-5416d5bc9a55.gif)
 
 #### 2. Create Pre-Build Event
 
-- Under the active configuration, right-click the CPU object and select properties
-- Find the build events tab and populate the pre-build field with the following prompt
-- The pre-build event must be set for each configuration seeking version information
+- Physical View -> active configuration -> right-click CPU object -> Properties
+- Build Events -> Configuration Pre-Build Event -> Insert the following call
 
 ```powershell
 PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)"
 ```
 
-**NOTE**: The first variable argument after the file path, `$(WIN32_AS_PROJECT_PATH)`, is without quotes because it will resolve with quotes.  *For paths with spaces* (e.g. "C:\My Projects\WireBender") this call will fail when expicitely including quotes on the `$(WIN32_AS_PROJECT_PATH)` argument.
+The first argument `$(WIN32_AS_PROJECT_PATH)` omits surrounding quotes because it will resolve with quotes.  If extra quotes are added to this argument, project paths with spaces will fail to be read ("C:\My Projects\CoffeeMachine").
+
+The Pre-Build Step will have to be set for all desired configurations.
 
 ![Step 2 2022-04-10_13-49-32](https://user-images.githubusercontent.com/33841634/162637534-a7b174c9-fff3-4a81-9096-b1335f0e7f23.gif)
 

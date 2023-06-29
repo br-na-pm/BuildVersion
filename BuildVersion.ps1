@@ -419,7 +419,7 @@ END_VAR
     # Register Variables.var in package definition
     if([System.IO.File]::Exists($PackageFile)) {
         $Content = Get-Content -Raw $PackageFile
-        $Regex = "Variables\.var"
+        $Regex = ">\s*Variables\.var\s*<"
         $Match = [regex]::Match($Content, $Regex)
         if(-not $Match.Success) {
             $Regex = "(?x) <Files> ((?:.|\n)*) </Files>"
