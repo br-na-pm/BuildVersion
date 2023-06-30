@@ -25,15 +25,15 @@ The script is intended for use with the version control system [git](https://git
 
 #### 1. Add Package to Project
 
-- [Download](https://github.com/br-na-pm/BuildVersion/releases/latest/download/BuildVersion.zip) and extract the BuildVersion package
+- [Download](https://github.com/br-na-pm/BuildVersion/releases/latest/download/BuildVersion.zip) and extract
 - Logical View -> select project folder -> Toolbox -> Existing Package -> import BuildVersion
 
 ![Step 1 2022-04-10_13-37-35](https://user-images.githubusercontent.com/33841634/162637472-ddf53ad9-52b9-4f34-935c-5416d5bc9a55.gif)
 
 #### 2. Create Pre-Build Event
 
-- Physical View -> active configuration -> right-click CPU object -> Properties
-- Build Events -> Configuration Pre-Build Event -> Insert the following call
+- Configuration View -> active configuration -> right-click CPU object -> Properties
+- Build Events -> Configuration Pre-Build Step -> Insert the following
 
 ```powershell
 PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)"
