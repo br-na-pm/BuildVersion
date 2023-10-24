@@ -1,8 +1,6 @@
 
-#ifdef _DEFAULT_INCLUDES
-	#include <AsDefault.h>
-#endif
-
+#include <BuildVersiontyp.h>
+#include <Variablesvar.h>
 #include <ArEventLog.h>
 #include <string.h>
 #include <stdint.h>
