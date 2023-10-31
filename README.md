@@ -9,15 +9,14 @@ The script is intended for use with the version control system [git](https://git
 
 ## Features
 
-- Use with and without git
-  - Git version information will only be updated if a git repository is detected 
-- PowerShell script will not error the Automation Studio build
-  - A pre-build event is required to run the PowerShell script
 - Capture git repository information and Automation Studio project information
+- Use with and without git
+  - The git info is only updated if a repository is detected, otherwise unmodified
 - Initialize local variable
   - **Variables.var** in **BuildVer** task located anywhere in **Logical** folder
 - Initialize global variable
   - First variable of **BuildVersionType** in **Global.var** located anywhere in **Logical** folder
+- PowerShell script will not error project compilation after successful [installation](#installation)
 - mappView widget integration
   - See [BuildVersion Widget Library](https://github.com/br-na-pm/BuildVersionWidget#readme)
 
