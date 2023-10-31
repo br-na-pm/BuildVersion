@@ -119,6 +119,7 @@ try {
 } 
 catch {
     Write-Warning "BuildVersion: Git in not installed or unavailable in PATH environment"
+    Write-Warning "BuildVersion: Re-launch Automation Studio after updating PATH"
     if($OptionErrorOnRepositoryCheck) { exit 1 }
     $BuiltWithGit = 0
 }
