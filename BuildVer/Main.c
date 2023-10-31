@@ -1,3 +1,15 @@
+/*******************************************************************************
+ * File: Main.c
+ * Created: 2022-03-21
+ * 
+ * Contributors: 
+ * - Tyler Matijevich
+ * 
+ * License:
+ *  This file Main.c is part of the BuildVersion project released under the
+ *  MIT License agreement.  For more information, please visit 
+ *  https://github.com/br-na-pm/BuildVersion/blob/main/LICENSE.
+ ******************************************************************************/
 
 #include <BuildVersiontyp.h>
 #include <Variablesvar.h>

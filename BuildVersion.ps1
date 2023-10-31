@@ -1,12 +1,16 @@
 ################################################################################
-# File: 
-#   BuildVersion.ps1
-# Authors:
-#   Wesley Buchanan
-#   Tyler Matijevich
-#   Connor Trostel
-# Date: 
-#   2022-03-21
+ # File: BuildVersion.ps1
+ # Created: 2022-03-21
+ # 
+ # Contributors: 
+ # - Wesley Buchanan
+ # - Tyler Matijevich
+ # - Connor Trostel
+ # 
+ # License:
+ #  This file BuildVersion.ps1 is part of the BuildVersion project released 
+ #  under the MIT License agreement.  For more information, please visit 
+ #  https://github.com/br-na-pm/BuildVersion/blob/main/LICENSE.
 ################################################################################
 
 $ScriptName = $MyInvocation.MyCommand.Name
