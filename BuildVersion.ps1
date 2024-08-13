@@ -13,6 +13,14 @@
  #  https://github.com/br-na-pm/BuildVersion/blob/main/LICENSE.
 ################################################################################
 
+################################################################################
+# Parameters
+################################################################################
+
+param (
+    [switch]$error_change
+)
+
 $ScriptName = $MyInvocation.MyCommand.Name
 Write-Host "BuildVersion: Running $ScriptName powershell script"
 
@@ -42,6 +50,11 @@ $OptionErrorOnRepositoryCheck = $False
 $OptionErrorOnUncommittedChanges = $False
 # Create build error if neither a local or global variable is initialized with version information
 $OptionErrorIfNoInitialization = $False
+
+function WriteError {
+    param ([String]$String = "No message")
+    Write-Host "Error: $String"
+}
 
 ################################################################################
 # Check project
@@ -233,9 +246,15 @@ try {
         $ChangeWarning = 0
     }
     else {
-        Write-Warning "BuildVersion: Uncommitted changes detected"
-        if($OptionErrorOnUncommittedChanges) { exit 1 }
-        $ChangeWarning = 1
+        $Message = "BuildVersion: Uncommitted changes detected"
+        if($error_change) { 
+            WriteError $Message
+            exit 1
+        }
+        else {
+            Write-Warning $Message
+            $ChangeWarning = 1
+        }
     }
 }
 catch {
