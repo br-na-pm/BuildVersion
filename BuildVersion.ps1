@@ -16,9 +16,19 @@
 ################################################################################
 # Parameters
 ################################################################################
-
 param (
-    [switch]$error_change
+    [parameter(position = 0)] [string] $project_path = "bad path",
+    [parameter(position = 1)] [string] $studio_version = "Unknown",
+    [parameter(position = 2)] [string] $user_name = "Unknown",
+    [parameter(position = 3)] [string] $project_name = "Unknown",
+    [parameter(position = 4)] [string] $configuration_name = "Unknown",
+    [parameter(position = 5)] [string] $build_mode = "Unknown",
+    # Create build error if uncommitted changes are found in git repository
+    [switch] $error_change,
+    # Add switch to debug arguments
+    [switch] $print_arguments,
+    # Add switch to print results
+    [switch] $print_results
 )
 
 $ScriptName = $MyInvocation.MyCommand.Name
@@ -45,25 +55,27 @@ $TypeIdentifier = "BuildVersionType"
 # Create build error if the script fails to due missing arguments
 $OptionErrorOnArguments = $False
 # Create build error if git is not installed or no git repository is found in project root
-$OptionErrorOnRepositoryCheck = $False 
-# Create build error if uncommitted changes are found in git repository
-$OptionErrorOnUncommittedChanges = $False
+$OptionErrorOnRepositoryCheck = $False
 # Create build error if neither a local or global variable is initialized with version information
 $OptionErrorIfNoInitialization = $False
 
-function WriteError {
-    param ([String]$String = "No message")
-    Write-Host "Error: $String"
+function write_error {
+    param ([String]$message = "No message")
+    write-host -foregroundcolor red "ERROR: $message"
 }
 
 ################################################################################
 # Check project
 ################################################################################
-# Debug
-# for($i = 0; $i -lt $args.Length; $i++) {
-#     $Value = $args[$i]
-#     Write-Host "Debug BuildVersion: Argument $i = $Value"
-# }
+if ($print_arguments) {
+    if ($args.length -eq 0) {
+        write-host "Debug BuildVersion: No unnamed parameters"
+    }
+    for($i = 0; $i -lt $args.length; $i++) {
+        $value = $args[$i]
+        write-host "Debug BuildVersion: Unnamed parameter $i = $value"
+    }
+}
 
 if($args.Length -lt 1) {
     # Write-Warning output to the Automation Studio console is limited to 110 characters (AS 4.11.5.46 SP)
@@ -246,13 +258,13 @@ try {
         $ChangeWarning = 0
     }
     else {
-        $Message = "BuildVersion: Uncommitted changes detected"
+        $message = "BuildVersion: Uncommitted changes detected"
         if($error_change) { 
-            WriteError $Message
+            write_error $message
             exit 1
         }
         else {
-            Write-Warning $Message
+            write-warning $message
             $ChangeWarning = 1
         }
     }
