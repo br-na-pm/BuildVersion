@@ -65,6 +65,11 @@ function ThrowError {
     exit 1
 }
 
+Write-Host "WARNING: BuildVersion: Let's test writing a 1 very long message 2 very long message 3 very long message 4 very long message"
+LogWarning "Let's test writing a 1 very long message 2 very long message 3 very long message 4 very long message"
+LogInfo "Let's test writing a 1 very long message 2 very long message 3 very long message 4 very long message"
+
+# Initialize
 $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
 
