@@ -13,10 +13,7 @@
  #  https://github.com/br-na-pm/BuildVersion/blob/main/LICENSE.
 ################################################################################
 
-################################################################################
 # Parameters
-################################################################################
-
 param (
     [switch]$error_change
 )
@@ -68,24 +65,8 @@ function ThrowError {
     exit 1
 }
 
-Write-Error "Test Write-Error"
-Write-Debug "Test Write-Debug"
-Write-Host "Test Write-Host"
-Write-Information "Test Write-Information"
-Write-Output "Test Write-Output"
-Write-Progress "Test Write-Progress"
-Write-Verbose "Test Write-Verbose"
-Write-Warning "Test Write-Warning"
-Write-Host "WARNING: This is a warning message with Write-Host"
-
-LogInfo("This is an information message")
-LogWarning("This is a warning message")
-ThrowError("This is an error message")
-
-exit 0
-
 $ScriptName = $MyInvocation.MyCommand.Name
-Write-Host "BuildVersion: Running $ScriptName powershell script"
+LogInfo "Running $ScriptName PowerShell script"
 
 ################################################################################
 # Note
