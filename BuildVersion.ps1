@@ -21,6 +21,69 @@ param (
     [switch]$error_change
 )
 
+# Local functions
+# Log information, warning, and eror
+$LogDefault = "No message provided"
+$LogPrefix = "BuildVersion:"
+
+function LogInfo {
+    param (
+        [String]$Message = $LogDefault
+    )
+
+    # Could also use Write-Output cmdlet
+    Write-Host "$LogPrefix $Message"
+
+    # Write-Debug, Write-Information, Write-Process, and Write-Verbose
+    # have no effect in the Automation Studio output results
+}
+
+function LogWarning {
+    param (
+        [String]$Message = $LogDefault
+    )
+
+    # Could also use the Write-Host cmdlet with "WARNING:" prefix
+    Write-Warning "$LogPrefix $Message"
+}
+
+function ThrowError {
+    param (
+        [String]$Message = $LogDefault
+    )
+
+    # PowerShell's Write-Error outputs additional attributes Category and FullyQualifiedErrorId
+    # The foreground color is in black
+    # I think this is confusing to the user
+
+    # Use "ERROR: " to register with Automation Studio
+    # This will cause the Automation Studio build procedure to abort
+    # A dialog window will appear
+    # There will be no build summary message in the output results
+    # The red foreground color helps when testing in other terminals and has no effect on Automation Studio
+    Write-Host -ForegroundColor Red "ERROR: $LogPrefix $Message"
+    
+    # This provides an addition message in Automation Studio "Pre-build step was executed with errors"
+    # For this reason, name the function ThrowError instead of LogError
+    exit 1
+}
+
+Write-Error "Test Write-Error"
+Write-Debug "Test Write-Debug"
+Write-Host "Test Write-Host"
+Write-Information "Test Write-Information"
+Write-Output "Test Write-Output"
+Write-Progress "Test Write-Progress"
+Write-Verbose "Test Write-Verbose"
+Write-Warning "Test Write-Warning"
+Write-Host "WARNING: This is a warning message with Write-Host"
+
+LogInfo("This is an information message")
+LogWarning("This is a warning message")
+ThrowError("This is an error message")
+
+exit 0
+
 $ScriptName = $MyInvocation.MyCommand.Name
 Write-Host "BuildVersion: Running $ScriptName powershell script"
 
