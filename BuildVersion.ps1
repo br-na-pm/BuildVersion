@@ -40,8 +40,12 @@ function LogWarning {
         [String]$Message = $LogDefault
     )
 
-    # Could also use the Write-Host cmdlet with "WARNING:" prefix
-    Write-Warning "$LogPrefix $Message"
+    # Write-Warning cmdlet is limited to 110 characters in the Automation Studio output resutls
+    # If a message exceeds 110 characters from Write-Warning
+    # it is wrapped to the next line and written in a different color
+    # Use Write-Host cmdlet instead and prefix with "WARNING: " to register with Automation Studio
+    # Use foreground color for terminal testing external to Automation Studio
+    Write-Host ForegroundColor Yellow "WARNING: $LogPrefix $Message"
 }
 
 function ThrowError {
@@ -64,10 +68,6 @@ function ThrowError {
     # For this reason, name the function ThrowError instead of LogError
     exit 1
 }
-
-Write-Host "WARNING: BuildVersion: Let's test writing a 1 very long message 2 very long message 3 very long message 4 very long message"
-LogWarning "Let's test writing a 1 very long message 2 very long message 3 very long message 4 very long message"
-LogInfo "Let's test writing a 1 very long message 2 very long message 3 very long message 4 very long message"
 
 # Initialize
 $ScriptName = $MyInvocation.MyCommand.Name
