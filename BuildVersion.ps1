@@ -18,6 +18,10 @@
 ################################################################################
 
 param (
+    # If the project path is not provided
+    # Intentionally set the default value to "Invalid path" to fail the directory existence test
+    [Parameter(Position = 0)][String]$ProjectPath = "Invalid path",
+
     [switch]$error_change
 )
 
@@ -65,16 +69,9 @@ function WriteError {
 #     Write-Host "Debug BuildVersion: Argument $i = $Value"
 # }
 
-if($args.Length -lt 1) {
-    # Write-Warning output to the Automation Studio console is limited to 110 characters (AS 4.11.5.46 SP)
-    Write-Warning "BuildVersion: Missing project path argument `$(WIN32_AS_PROJECT_PATH)"
-    if($OptionErrorOnArguments) { exit 1 } 
-    exit 0
-}
-
-$LogicalPath = $args[0] + "\Logical\"
+$LogicalPath = $ProjectPath + "\Logical\"
 if(-not [System.IO.Directory]::Exists($LogicalPath)) {
-    $Path = $args[0]
+    $Path = $ProjectPath
     Write-Warning "BuildVersion: Cannot find Logical folder in $Path"
     if($OptionErrorOnArguments) { exit 1 } 
     exit 0
@@ -143,7 +140,7 @@ catch {
 
 # Is the project in a repository? Use `git config --list --local`
 try { 
-    git -C $args[0] config --list --local *> $Null
+    git -C $ProjectPath config --list --local *> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: No local repository has been found in the project root"
         if($OptionErrorOnRepositoryCheck) { exit 1 }
@@ -156,7 +153,7 @@ catch {}
 # References:
 # https://reactgo.com/git-remote-url/
 try {
-    $Url = git -C $args[0] config --get remote.origin.url 2> $Null
+    $Url = git -C $ProjectPath config --get remote.origin.url 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Git repository has no remote or differs from ""origin"""
         $Url = "Unknown"
@@ -171,7 +168,7 @@ $Url = TruncateString $Url 255
 # References:
 # https://stackoverflow.com/a/12142066 
 try {
-    $Branch = git -C $args[0] branch --show-current 2> $Null
+    $Branch = git -C $ProjectPath branch --show-current 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Local repository is in a headless state"
         $Branch = "Unknown"
@@ -188,7 +185,7 @@ $Branch = TruncateString $Branch 80
 # "Catching exceptions" https://stackoverflow.com/a/32287181
 # "Suppressing outputs" https://stackoverflow.com/a/57548278
 try {
-    $Tag = git -C $args[0] describe --tags --abbrev=0 2> $Null
+    $Tag = git -C $ProjectPath describe --tags --abbrev=0 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: No tags have been created on this branch"
         $Tag = "None"
@@ -197,7 +194,7 @@ try {
         $Version = "None"
     }
     else {
-        $Describe = git -C $args[0] describe --tags --long 2> $Null
+        $Describe = git -C $ProjectPath describe --tags --long 2> $Null
         if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
             Write-Warning "BuildVersion: Unable to determine # of additional commits"
             $AdditionalCommits = 0
@@ -223,7 +220,7 @@ $Version = TruncateString $Version 80
 # References:
 # https://www.systutorials.com/how-to-get-the-latest-git-commit-sha-1-in-a-repository/
 try {
-    $Sha1 = git -C $args[0] rev-parse HEAD 2> $Null
+    $Sha1 = git -C $ProjectPath rev-parse HEAD 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Unable to determine latest secure hash"
         $Sha1 = "Unknown"
@@ -236,7 +233,7 @@ $Sha1 = TruncateString $Sha1 80
 
 # Uncommitted changes
 try {
-    $UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
+    $UncommittedChanges = git -C $ProjectPath diff --shortstat 2> $Null
     if($LASTEXITCODE -ne 0) {
         $UncommittedChanges = "Unknown"
         $ChangeWarning = 0
@@ -265,7 +262,7 @@ $UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
 
 # Date
 try {
-    $GitDate = git -C $args[0] log -1 --format=%cd --date=iso 2> $Null
+    $GitDate = git -C $ProjectPath log -1 --format=%cd --date=iso 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Unable to determine latest commit date"
         $CommitDate = "2000-01-01-00:00:00"
@@ -282,8 +279,8 @@ catch {
 # References:
 # https://stackoverflow.com/a/41548774
 try {
-    $CommitAuthorName = git -C $Args[0] log -1 --pretty=format:'%an' 2> $Null
-    $CommitAuthorEmail = git -C $Args[0] log -1 --pretty=format:'%ae' 2> $Null
+    $CommitAuthorName = git -C $ProjectPath log -1 --pretty=format:'%an' 2> $Null
+    $CommitAuthorEmail = git -C $ProjectPath log -1 --pretty=format:'%ae' 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Unable to determine latest commit author"
         $CommitAuthorName = "Unknown"
