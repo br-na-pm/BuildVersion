@@ -45,7 +45,7 @@ function LogWarning {
     # it is wrapped to the next line and written in a different color
     # Use Write-Host cmdlet instead and prefix with "WARNING: " to register with Automation Studio
     # Use foreground color for terminal testing external to Automation Studio
-    Write-Host ForegroundColor Yellow "WARNING: $LogPrefix $Message"
+    Write-Host -ForegroundColor Yellow "WARNING: $LogPrefix $Message"
 }
 
 function ThrowError {
@@ -74,13 +74,6 @@ $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
 
 ################################################################################
-# Note
-################################################################################
-# Please edit the "Parameters" section just below as you see fit
-# Pre-build event field (also in README):
-# PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)"
-
-################################################################################
 # Parameters
 ################################################################################
 # The script will search under Logical to find this program (e.g. .\Logical\BuildVersion\BuildVer)
@@ -99,11 +92,6 @@ $OptionErrorOnRepositoryCheck = $False
 $OptionErrorOnUncommittedChanges = $False
 # Create build error if neither a local or global variable is initialized with version information
 $OptionErrorIfNoInitialization = $False
-
-function WriteError {
-    param ([String]$String = "No message")
-    Write-Host "Error: $String"
-}
 
 ################################################################################
 # Check project
@@ -295,13 +283,12 @@ try {
         $ChangeWarning = 0
     }
     else {
-        $Message = "BuildVersion: Uncommitted changes detected"
+        $Message = "Uncommitted changes detected"
         if($error_change) { 
-            WriteError $Message
-            exit 1
+            LogError $Message
         }
         else {
-            Write-Warning $Message
+            LogWarning $Message
             $ChangeWarning = 1
         }
     }
