@@ -22,6 +22,12 @@ param (
     # Intentionally set the default value to "Invalid path" to fail the directory existence test
     [Parameter(Position = 0)][String]$ProjectPath = "Invalid path",
 
+    [Parameter(Position = 1)][String]$StudioVersion = "Unknown",
+    [Parameter(Position = 2)][String]$UserName = "Unknown",
+    [Parameter(Position = 3)][String]$ProjectName = "Unknown",
+    [Parameter(Position = 4)][String]$Configuration = "Unknown",
+    [Parameter(Position = 5)][String]$BuildMode = "Unknown",
+
     [switch]$error_change
 )
 
@@ -299,27 +305,20 @@ $CommitAuthorEmail = TruncateString $CommitAuthorEmail 80
 ################################################################################
 $BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
 
-# Check arguments
-if($args.Length -ne 6) {
-    Write-Warning "BuildVersion: Missing or unknown arguments for project information"
-    if($OptionErrorOnArguments) { exit 1 } 
-    $ASVersion = "Unknown"
-    $UserName = "Unknown"
-    $ProjectName = "Unknown"
-    $Configuration = "Unknown"
-    $BuildMode = "Unknown"
-}
-else {
-    $ASVersion = TruncateString $args[1] 80
-    $UserName = TruncateString $args[2] 80
-    $ProjectName = TruncateString $args[3] 80
-    $Configuration = TruncateString $args[4] 80
-    $BuildMode = TruncateString $args[5] 80
-    $ProjectMarcos = [Ref]$ASVersion, [Ref]$UserName, [Ref]$ProjectName, [Ref]$Configuration, [Ref]$BuildMode 
-    for($i = 0; $i -lt $ProjectMarcos.Length; $i++) {
-        if($ProjectMarcos[$i].Value[0] -eq "$") { # Catch incomplete macros which cause warnings and confusion
-            $ProjectMarcos[$i].Value = "Unknown"
-        }
+$StudioVersion = TruncateString $StudioVersion 80
+$UserName = TruncateString $UserName 80
+$ProjectName = TruncateString $ProjectName 80
+$Configuration = TruncateString $Configuration 80
+$BuildMode = TruncateString $BuildMode 80
+
+$BuildVariables = [Ref]$StudioVersion, [Ref]$UserName, [Ref]$ProjectName, [Ref]$Configuration, [Ref]$BuildMode 
+for($i = 0; $i -lt $BuildVariables.Length; $i++) {
+    # Automation Studio build variables are resolved using the currency character '$'
+    # However, '$' is also the escape character for IEC 61131-3 languages
+    # This can cause confusing results
+    # Check for any leading currency characters from unresolved macros
+    if($BuildVariables[$i].Value[0] -eq "$") {
+        $BuildVariables[$i].Value = "Unknown"
     }
 }
 
@@ -330,7 +329,7 @@ $ScriptInitialization = "BuiltWithGit:=$BuiltWithGit"
 
 $GitInitialization = "URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',ChangeWarning:=$ChangeWarning,CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail'"
 
-$ProjectInitialization = "ASVersion:='$ASVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate"
+$ProjectInitialization = "ASVersion:='$StudioVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate"
 
 ################################################################################
 # Global declaration
