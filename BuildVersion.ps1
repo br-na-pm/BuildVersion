@@ -32,7 +32,12 @@ param (
     # Structure type identifier for git and project information
     [String]$TypeName = "BuildVersionType",
 
-    [switch]$error_change
+    # Create build error if git is not installed or no git repository is found in project root
+    [switch]$ErrorRepo,
+    # Create build error if uncommitted changes are found in git repository
+    [switch]$ErrorChange,
+    # Create build error if neither a local or global variable is initialized with version information
+    [switch]$ErrorInit
 )
 
 # Local functions
@@ -86,23 +91,22 @@ function ThrowError {
     exit 1
 }
 
+function LogSwitch {
+    param (
+        [Parameter(Position = 0)][Bool]$Condition = $False,
+        [Parameter(Position = 1)][String]$Message = $LogDefault
+    )
+    if($Condition) {
+        ThrowError $Message
+    }
+    else {
+        LogWarning $Message
+    }
+}
+
 # Initialize
 $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
-
-################################################################################
-# Parameters
-################################################################################
-
-# Use $True or $False to select options
-# Create build error if the script fails to due missing arguments
-$OptionErrorOnArguments = $False
-# Create build error if git is not installed or no git repository is found in project root
-$OptionErrorOnRepositoryCheck = $False 
-# Create build error if uncommitted changes are found in git repository
-$OptionErrorOnUncommittedChanges = $False
-# Create build error if neither a local or global variable is initialized with version information
-$OptionErrorIfNoInitialization = $False
 
 ################################################################################
 # Check project
@@ -170,25 +174,23 @@ function TruncateString {
 # Is git command available? Use `git version`
 try {
     git version *> $Null
-    $BuiltWithGit = 1
 } 
 catch {
-    LogWarning "Git in not installed or unavailable in PATH environment"
-    LogWarning "Re-launch Automation Studio after updating PATH"
-    if($OptionErrorOnRepositoryCheck) { exit 1 }
-    $BuiltWithGit = 0
+    LogSwitch $ErrorRepo.IsPresent "Git in not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH"
 }
 
 # Is the project in a repository? Use `git config --list --local`
 try { 
     git -C $ProjectPath config --list --local *> $Null
+    $BuiltWithGit = 1
     if($LASTEXITCODE -ne 0) {
-        LogWarning "No local repository has been found in the project root"
-        if($OptionErrorOnRepositoryCheck) { exit 1 }
+        LogSwitch $ErrorRepo.IsPresent "No local git repository is located at the project path $ProjectPath"
         $BuiltWithGit = 0
     }
 }
-catch {}
+catch {
+    $BuiltWithGit = 0
+}
 
 # Remote URL
 # References:
@@ -284,14 +286,8 @@ try {
         $ChangeWarning = 0
     }
     else {
-        $Message = "Uncommitted changes detected"
-        if($error_change) { 
-            LogError $Message
-        }
-        else {
-            LogWarning $Message
-            $ChangeWarning = 1
-        }
+        LogSwitch $ErrorChange.IsPresent "Uncommitted changes detected"
+        $ChangeWarning = 1
     }
 }
 catch {
@@ -492,8 +488,7 @@ END_VAR
 # Complete
 ################################################################################
 if((-not $GlobalDeclarationFound) -and (-not $ProgramFound)) {
-    LogWarning "No local or global build version information has been initialized"
-    if($OptionErrorIfNoInitialization) { exit 1 }
+    LogSwitch $ErrorInit.IsPresent "No local or global build version information has been initialized"
 }
 else {
     LogInfo "Completed $ScriptName powershell script"
