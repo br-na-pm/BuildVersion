@@ -28,6 +28,13 @@ param (
     [Parameter(Position = 4)][String]$Configuration = "Unknown",
     [Parameter(Position = 5)][String]$BuildMode = "Unknown",
 
+    # Project task to search for under Logical/ and update local Variables.var
+    [String]$ProgramName = "BuildVer",
+    # Global variable declaration file to search for under Logical/
+    [String]$GlobalFilename = "Global.var",
+    # Structure type identifier for git and project information
+    [String]$TypeName = "BuildVersionType",
+
     [switch]$error_change
 )
 
@@ -44,12 +51,6 @@ Write-Host "BuildVersion: Running $ScriptName powershell script"
 ################################################################################
 # Parameters
 ################################################################################
-# The script will search under Logical to find this program (e.g. .\Logical\BuildVersion\BuildVer)
-$ProgramName = "BuildVer"
-# The script will search under Logical to find this variable file (e.g. .\Logical\Global.var)
-$GlobalDeclarationName = "Global.var"
-# The script will search for variables of this type
-$TypeIdentifier = "BuildVersionType"
 
 # Use $True or $False to select options
 # Create build error if the script fails to due missing arguments
@@ -108,19 +109,19 @@ if(-NOT $ProgramFound) {
 }
 
 # Search for global variable declaration file
-$Search = Get-ChildItem -Path $LogicalPath -Filter $GlobalDeclarationName -Recurse -File -Name 
+$Search = Get-ChildItem -Path $LogicalPath -Filter $GlobalFilename -Recurse -File -Name 
 $GlobalFileFound = $False
 foreach($SearchItem in $Search) {
     $GlobalFile = $LogicalPath + $SearchItem
     $GlobalFileFound = $True
     $RelativeGlobalFile = $GlobalFile.Replace($LogicalPath, ".\Logical\")
-    Write-Host "BuildVersion: Located $GlobalDeclarationName at $RelativeGlobalFile"
+    Write-Host "BuildVersion: Located $GlobalFilename at $RelativeGlobalFile"
     # Only take the first Global.var found
     break
 }
 if(-not $GlobalFileFound) {
     # This is only informational because a global variable declaration is optional
-    Write-Host "BuildVersion: Unable to locate $GlobalDeclarationName in $LogicalPath"
+    Write-Host "BuildVersion: Unable to locate $GlobalFilename in $LogicalPath"
 }
 
 ################################################################################
@@ -340,7 +341,7 @@ if([System.IO.File]::Exists($GlobalFile)) {
     # Protect empty file
     if($Content.Length -eq 0) {$Content = " "}
     # Match global declaration
-    $MatchDeclaration = [regex]::Match($Content, "(?x) (\w+) \s* : \s* $TypeIdentifier \s* (:= \s* \( (.+) \) \s*)? ;")
+    $MatchDeclaration = [regex]::Match($Content, "(?x) (\w+) \s* : \s* $TypeName \s* (:= \s* \( (.+) \) \s*)? ;")
     if($MatchDeclaration.Success) {
         $Name = $MatchDeclaration.Groups[1].Value
         # Match build version initialization
@@ -366,14 +367,14 @@ Project \s* := \s* \( ( .+ ) \)
             Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile updated with build version information"
         }
         else {
-            $Content = $Content.Replace($MatchDeclaration.Value, "$Name : $TypeIdentifier := (Script:=($ScriptInitialization),Git:=($GitInitialization),Project:=($ProjectInitialization));")
+            $Content = $Content.Replace($MatchDeclaration.Value, "$Name : $TypeName := (Script:=($ScriptInitialization),Git:=($GitInitialization),Project:=($ProjectInitialization));")
             Set-Content -Path $GlobalFile $Content
             Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile overwritten with build version information"
         }
         $GlobalDeclarationFound = $True
     }
     else {
-        Write-Host "BuildVersion: No variable of type $TypeIdentifier found in $RelativeGlobalFile"
+        Write-Host "BuildVersion: No variable of type $TypeName found in $RelativeGlobalFile"
     }
 }
 
@@ -399,7 +400,7 @@ if($ProgramFound) {
 (?x)
 \(\*This \s file \s was \s automatically \s generated \s by \s ([\w\d\.]+) \s on \s ([\d-:]+)\.\*\) 
 (?:.|\n)*
-BuildVersion \s* : \s* $TypeIdentifier \s*
+BuildVersion \s* : \s* $TypeName \s*
 := \s* \( \s*
 Script \s* := \s* \( ( .+ ) \)
 \s* , \s*
