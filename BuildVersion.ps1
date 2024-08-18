@@ -15,6 +15,23 @@
 
 # Parameters
 param (
+    # If the project path is not provided
+    # Intentionally set the default value to "Invalid path" to fail the directory existence test
+    [Parameter(Position = 0)][String]$ProjectPath = "Invalid path",
+
+    [Parameter(Position = 1)][String]$StudioVersion = "Unknown",
+    [Parameter(Position = 2)][String]$UserName = "Unknown",
+    [Parameter(Position = 3)][String]$ProjectName = "Unknown",
+    [Parameter(Position = 4)][String]$Configuration = "Unknown",
+    [Parameter(Position = 5)][String]$BuildMode = "Unknown",
+
+    # Project task to search for under Logical/ and update local Variables.var
+    [String]$ProgramName = "BuildVer",
+    # Global variable declaration file to search for under Logical/
+    [String]$GlobalFilename = "Global.var",
+    # Structure type identifier for git and project information
+    [String]$TypeName = "BuildVersionType",
+
     [switch]$error_change
 )
 
@@ -76,12 +93,6 @@ LogInfo "Running $ScriptName PowerShell script"
 ################################################################################
 # Parameters
 ################################################################################
-# The script will search under Logical to find this program (e.g. .\Logical\BuildVersion\BuildVer)
-$ProgramName = "BuildVer"
-# The script will search under Logical to find this variable file (e.g. .\Logical\Global.var)
-$GlobalDeclarationName = "Global.var"
-# The script will search for variables of this type
-$TypeIdentifier = "BuildVersionType"
 
 # Use $True or $False to select options
 # Create build error if the script fails to due missing arguments
@@ -102,16 +113,9 @@ $OptionErrorIfNoInitialization = $False
 #     Write-Host "Debug BuildVersion: Argument $i = $Value"
 # }
 
-if($args.Length -lt 1) {
-    # Write-Warning output to the Automation Studio console is limited to 110 characters (AS 4.11.5.46 SP)
-    Write-Warning "BuildVersion: Missing project path argument `$(WIN32_AS_PROJECT_PATH)"
-    if($OptionErrorOnArguments) { exit 1 } 
-    exit 0
-}
-
-$LogicalPath = $args[0] + "\Logical\"
+$LogicalPath = $ProjectPath + "\Logical\"
 if(-not [System.IO.Directory]::Exists($LogicalPath)) {
-    $Path = $args[0]
+    $Path = $ProjectPath
     Write-Warning "BuildVersion: Cannot find Logical folder in $Path"
     if($OptionErrorOnArguments) { exit 1 } 
     exit 0
@@ -142,19 +146,19 @@ if(-NOT $ProgramFound) {
 }
 
 # Search for global variable declaration file
-$Search = Get-ChildItem -Path $LogicalPath -Filter $GlobalDeclarationName -Recurse -File -Name 
+$Search = Get-ChildItem -Path $LogicalPath -Filter $GlobalFilename -Recurse -File -Name 
 $GlobalFileFound = $False
 foreach($SearchItem in $Search) {
     $GlobalFile = $LogicalPath + $SearchItem
     $GlobalFileFound = $True
     $RelativeGlobalFile = $GlobalFile.Replace($LogicalPath, ".\Logical\")
-    Write-Host "BuildVersion: Located $GlobalDeclarationName at $RelativeGlobalFile"
+    Write-Host "BuildVersion: Located $GlobalFilename at $RelativeGlobalFile"
     # Only take the first Global.var found
     break
 }
 if(-not $GlobalFileFound) {
     # This is only informational because a global variable declaration is optional
-    Write-Host "BuildVersion: Unable to locate $GlobalDeclarationName in $LogicalPath"
+    Write-Host "BuildVersion: Unable to locate $GlobalFilename in $LogicalPath"
 }
 
 ################################################################################
@@ -180,7 +184,7 @@ catch {
 
 # Is the project in a repository? Use `git config --list --local`
 try { 
-    git -C $args[0] config --list --local *> $Null
+    git -C $ProjectPath config --list --local *> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: No local repository has been found in the project root"
         if($OptionErrorOnRepositoryCheck) { exit 1 }
@@ -193,7 +197,7 @@ catch {}
 # References:
 # https://reactgo.com/git-remote-url/
 try {
-    $Url = git -C $args[0] config --get remote.origin.url 2> $Null
+    $Url = git -C $ProjectPath config --get remote.origin.url 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Git repository has no remote or differs from ""origin"""
         $Url = "Unknown"
@@ -208,7 +212,7 @@ $Url = TruncateString $Url 255
 # References:
 # https://stackoverflow.com/a/12142066 
 try {
-    $Branch = git -C $args[0] branch --show-current 2> $Null
+    $Branch = git -C $ProjectPath branch --show-current 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Local repository is in a headless state"
         $Branch = "Unknown"
@@ -225,7 +229,7 @@ $Branch = TruncateString $Branch 80
 # "Catching exceptions" https://stackoverflow.com/a/32287181
 # "Suppressing outputs" https://stackoverflow.com/a/57548278
 try {
-    $Tag = git -C $args[0] describe --tags --abbrev=0 2> $Null
+    $Tag = git -C $ProjectPath describe --tags --abbrev=0 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: No tags have been created on this branch"
         $Tag = "None"
@@ -234,7 +238,7 @@ try {
         $Version = "None"
     }
     else {
-        $Describe = git -C $args[0] describe --tags --long 2> $Null
+        $Describe = git -C $ProjectPath describe --tags --long 2> $Null
         if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
             Write-Warning "BuildVersion: Unable to determine # of additional commits"
             $AdditionalCommits = 0
@@ -260,7 +264,7 @@ $Version = TruncateString $Version 80
 # References:
 # https://www.systutorials.com/how-to-get-the-latest-git-commit-sha-1-in-a-repository/
 try {
-    $Sha1 = git -C $args[0] rev-parse HEAD 2> $Null
+    $Sha1 = git -C $ProjectPath rev-parse HEAD 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Unable to determine latest secure hash"
         $Sha1 = "Unknown"
@@ -273,7 +277,7 @@ $Sha1 = TruncateString $Sha1 80
 
 # Uncommitted changes
 try {
-    $UncommittedChanges = git -C $args[0] diff --shortstat 2> $Null
+    $UncommittedChanges = git -C $ProjectPath diff --shortstat 2> $Null
     if($LASTEXITCODE -ne 0) {
         $UncommittedChanges = "Unknown"
         $ChangeWarning = 0
@@ -301,7 +305,7 @@ $UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
 
 # Date
 try {
-    $GitDate = git -C $args[0] log -1 --format=%cd --date=iso 2> $Null
+    $GitDate = git -C $ProjectPath log -1 --format=%cd --date=iso 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Unable to determine latest commit date"
         $CommitDate = "2000-01-01-00:00:00"
@@ -318,8 +322,8 @@ catch {
 # References:
 # https://stackoverflow.com/a/41548774
 try {
-    $CommitAuthorName = git -C $Args[0] log -1 --pretty=format:'%an' 2> $Null
-    $CommitAuthorEmail = git -C $Args[0] log -1 --pretty=format:'%ae' 2> $Null
+    $CommitAuthorName = git -C $ProjectPath log -1 --pretty=format:'%an' 2> $Null
+    $CommitAuthorEmail = git -C $ProjectPath log -1 --pretty=format:'%ae' 2> $Null
     if($LASTEXITCODE -ne 0) {
         Write-Warning "BuildVersion: Unable to determine latest commit author"
         $CommitAuthorName = "Unknown"
@@ -338,27 +342,20 @@ $CommitAuthorEmail = TruncateString $CommitAuthorEmail 80
 ################################################################################
 $BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
 
-# Check arguments
-if($args.Length -ne 6) {
-    Write-Warning "BuildVersion: Missing or unknown arguments for project information"
-    if($OptionErrorOnArguments) { exit 1 } 
-    $ASVersion = "Unknown"
-    $UserName = "Unknown"
-    $ProjectName = "Unknown"
-    $Configuration = "Unknown"
-    $BuildMode = "Unknown"
-}
-else {
-    $ASVersion = TruncateString $args[1] 80
-    $UserName = TruncateString $args[2] 80
-    $ProjectName = TruncateString $args[3] 80
-    $Configuration = TruncateString $args[4] 80
-    $BuildMode = TruncateString $args[5] 80
-    $ProjectMarcos = [Ref]$ASVersion, [Ref]$UserName, [Ref]$ProjectName, [Ref]$Configuration, [Ref]$BuildMode 
-    for($i = 0; $i -lt $ProjectMarcos.Length; $i++) {
-        if($ProjectMarcos[$i].Value[0] -eq "$") { # Catch incomplete macros which cause warnings and confusion
-            $ProjectMarcos[$i].Value = "Unknown"
-        }
+$StudioVersion = TruncateString $StudioVersion 80
+$UserName = TruncateString $UserName 80
+$ProjectName = TruncateString $ProjectName 80
+$Configuration = TruncateString $Configuration 80
+$BuildMode = TruncateString $BuildMode 80
+
+$BuildVariables = [Ref]$StudioVersion, [Ref]$UserName, [Ref]$ProjectName, [Ref]$Configuration, [Ref]$BuildMode 
+for($i = 0; $i -lt $BuildVariables.Length; $i++) {
+    # Automation Studio build variables are resolved using the currency character '$'
+    # However, '$' is also the escape character for IEC 61131-3 languages
+    # This can cause confusing results
+    # Check for any leading currency characters from unresolved macros
+    if($BuildVariables[$i].Value[0] -eq "$") {
+        $BuildVariables[$i].Value = "Unknown"
     }
 }
 
@@ -369,7 +366,7 @@ $ScriptInitialization = "BuiltWithGit:=$BuiltWithGit"
 
 $GitInitialization = "URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',ChangeWarning:=$ChangeWarning,CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail'"
 
-$ProjectInitialization = "ASVersion:='$ASVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate"
+$ProjectInitialization = "ASVersion:='$StudioVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate"
 
 ################################################################################
 # Global declaration
@@ -380,7 +377,7 @@ if([System.IO.File]::Exists($GlobalFile)) {
     # Protect empty file
     if($Content.Length -eq 0) {$Content = " "}
     # Match global declaration
-    $MatchDeclaration = [regex]::Match($Content, "(?x) (\w+) \s* : \s* $TypeIdentifier \s* (:= \s* \( (.+) \) \s*)? ;")
+    $MatchDeclaration = [regex]::Match($Content, "(?x) (\w+) \s* : \s* $TypeName \s* (:= \s* \( (.+) \) \s*)? ;")
     if($MatchDeclaration.Success) {
         $Name = $MatchDeclaration.Groups[1].Value
         # Match build version initialization
@@ -406,14 +403,14 @@ Project \s* := \s* \( ( .+ ) \)
             Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile updated with build version information"
         }
         else {
-            $Content = $Content.Replace($MatchDeclaration.Value, "$Name : $TypeIdentifier := (Script:=($ScriptInitialization),Git:=($GitInitialization),Project:=($ProjectInitialization));")
+            $Content = $Content.Replace($MatchDeclaration.Value, "$Name : $TypeName := (Script:=($ScriptInitialization),Git:=($GitInitialization),Project:=($ProjectInitialization));")
             Set-Content -Path $GlobalFile $Content
             Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile overwritten with build version information"
         }
         $GlobalDeclarationFound = $True
     }
     else {
-        Write-Host "BuildVersion: No variable of type $TypeIdentifier found in $RelativeGlobalFile"
+        Write-Host "BuildVersion: No variable of type $TypeName found in $RelativeGlobalFile"
     }
 }
 
@@ -439,7 +436,7 @@ if($ProgramFound) {
 (?x)
 \(\*This \s file \s was \s automatically \s generated \s by \s ([\w\d\.]+) \s on \s ([\d-:]+)\.\*\) 
 (?:.|\n)*
-BuildVersion \s* : \s* $TypeIdentifier \s*
+BuildVersion \s* : \s* $TypeName \s*
 := \s* \( \s*
 Script \s* := \s* \( ( .+ ) \)
 \s* , \s*
