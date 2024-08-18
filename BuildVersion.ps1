@@ -113,17 +113,16 @@ $OptionErrorIfNoInitialization = $False
 #     Write-Host "Debug BuildVersion: Argument $i = $Value"
 # }
 
+# Verify logical path
 $LogicalPath = $ProjectPath + "\Logical\"
-if(-not [System.IO.Directory]::Exists($LogicalPath)) {
-    $Path = $ProjectPath
-    Write-Warning "BuildVersion: Cannot find Logical folder in $Path"
-    if($OptionErrorOnArguments) { exit 1 } 
-    exit 0
+if([System.IO.Directory]::Exists($LogicalPath)) {
+    LogInfo "Logical directory exists at $LogicalPath"
+}
+else {
+    ThrowError "Unable to locate Logical directory in project path $ProjectPath"
 }
 
-################################################################################
-# Search
-################################################################################
+# Locate program (task)
 # Search for directories named $ProgramName
 $Search = Get-ChildItem -Path $LogicalPath -Filter $ProgramName -Recurse -Directory -Name
 $ProgramFound = $False
@@ -136,13 +135,12 @@ foreach($SearchItem in $Search) {
     if($SubSearch.Count -eq 1) {
         $ProgramFound = $True
         $PackageFile = $ProgramPath + $SubSearch
-        $RelativeProgramPath = $ProgramPath.Replace($LogicalPath, ".\Logical\")
-        Write-Host "BuildVersion: Located $ProgramName program at $RelativeProgramPath"
+        LogInfo "Located $ProgramName program at $ProgramPath"
         break
     }
 }
 if(-NOT $ProgramFound) {
-    Write-Warning "BuildVersion: Unable to locate $ProgramName in $LogicalPath"
+    LogWarning "Unable to locate $ProgramName in $LogicalPath"
 }
 
 # Search for global variable declaration file
@@ -151,14 +149,13 @@ $GlobalFileFound = $False
 foreach($SearchItem in $Search) {
     $GlobalFile = $LogicalPath + $SearchItem
     $GlobalFileFound = $True
-    $RelativeGlobalFile = $GlobalFile.Replace($LogicalPath, ".\Logical\")
-    Write-Host "BuildVersion: Located $GlobalFilename at $RelativeGlobalFile"
+    LogInfo "Located $GlobalFilename at $GlobalFile"
     # Only take the first Global.var found
     break
 }
 if(-not $GlobalFileFound) {
     # This is only informational because a global variable declaration is optional
-    Write-Host "BuildVersion: Unable to locate $GlobalFilename in $LogicalPath"
+    LogInfo "Unable to locate $GlobalFilename in $LogicalPath"
 }
 
 ################################################################################
@@ -176,8 +173,8 @@ try {
     $BuiltWithGit = 1
 } 
 catch {
-    Write-Warning "BuildVersion: Git in not installed or unavailable in PATH environment"
-    Write-Warning "BuildVersion: Re-launch Automation Studio after updating PATH"
+    LogWarning "Git in not installed or unavailable in PATH environment"
+    LogWarning "Re-launch Automation Studio after updating PATH"
     if($OptionErrorOnRepositoryCheck) { exit 1 }
     $BuiltWithGit = 0
 }
@@ -186,7 +183,7 @@ catch {
 try { 
     git -C $ProjectPath config --list --local *> $Null
     if($LASTEXITCODE -ne 0) {
-        Write-Warning "BuildVersion: No local repository has been found in the project root"
+        LogWarning "No local repository has been found in the project root"
         if($OptionErrorOnRepositoryCheck) { exit 1 }
         $BuiltWithGit = 0
     }
@@ -199,7 +196,7 @@ catch {}
 try {
     $Url = git -C $ProjectPath config --get remote.origin.url 2> $Null
     if($LASTEXITCODE -ne 0) {
-        Write-Warning "BuildVersion: Git repository has no remote or differs from ""origin"""
+        LogWarning "Git repository has no remote or differs from ""origin"""
         $Url = "Unknown"
     }
 }
@@ -214,7 +211,7 @@ $Url = TruncateString $Url 255
 try {
     $Branch = git -C $ProjectPath branch --show-current 2> $Null
     if($LASTEXITCODE -ne 0) {
-        Write-Warning "BuildVersion: Local repository is in a headless state"
+        LogWarning "Local repository is in a headless state"
         $Branch = "Unknown"
     }
 }
@@ -231,7 +228,7 @@ $Branch = TruncateString $Branch 80
 try {
     $Tag = git -C $ProjectPath describe --tags --abbrev=0 2> $Null
     if($LASTEXITCODE -ne 0) {
-        Write-Warning "BuildVersion: No tags have been created on this branch"
+        LogWarning "No tags have been created on this branch"
         $Tag = "None"
         $Describe = "None"
         $AdditionalCommits = 0
@@ -240,7 +237,7 @@ try {
     else {
         $Describe = git -C $ProjectPath describe --tags --long 2> $Null
         if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
-            Write-Warning "BuildVersion: Unable to determine # of additional commits"
+            LogWarning "Unable to determine # of additional commits"
             $AdditionalCommits = 0
             $Version = $Tag
         }
@@ -266,7 +263,7 @@ $Version = TruncateString $Version 80
 try {
     $Sha1 = git -C $ProjectPath rev-parse HEAD 2> $Null
     if($LASTEXITCODE -ne 0) {
-        Write-Warning "BuildVersion: Unable to determine latest secure hash"
+        LogWarning "Unable to determine latest secure hash"
         $Sha1 = "Unknown"
     }
 }
@@ -307,7 +304,7 @@ $UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
 try {
     $GitDate = git -C $ProjectPath log -1 --format=%cd --date=iso 2> $Null
     if($LASTEXITCODE -ne 0) {
-        Write-Warning "BuildVersion: Unable to determine latest commit date"
+        LogWarning "Unable to determine latest commit date"
         $CommitDate = "2000-01-01-00:00:00"
     }
     else {
@@ -325,7 +322,7 @@ try {
     $CommitAuthorName = git -C $ProjectPath log -1 --pretty=format:'%an' 2> $Null
     $CommitAuthorEmail = git -C $ProjectPath log -1 --pretty=format:'%ae' 2> $Null
     if($LASTEXITCODE -ne 0) {
-        Write-Warning "BuildVersion: Unable to determine latest commit author"
+        LogWarning "Unable to determine latest commit author"
         $CommitAuthorName = "Unknown"
         $CommitAuthorEmail = "Unknown"
     }
@@ -400,17 +397,17 @@ Project \s* := \s* \( ( .+ ) \)
             if($BuiltWithGit) { $Content = $Content.Replace($MatchInitialization.Groups[2].Value, $GitInitialization) }
             $Content = $Content.Replace($MatchInitialization.Groups[3].Value, $ProjectInitialization)
             Set-Content -Path $GlobalFile $Content
-            Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile updated with build version information"
+            LogInfo "$Name's initialization in $RelativeGlobalFile updated with build version information"
         }
         else {
             $Content = $Content.Replace($MatchDeclaration.Value, "$Name : $TypeName := (Script:=($ScriptInitialization),Git:=($GitInitialization),Project:=($ProjectInitialization));")
             Set-Content -Path $GlobalFile $Content
-            Write-Host "BuildVersion: $Name's initialization in $RelativeGlobalFile overwritten with build version information"
+            LogInfo "$Name's initialization in $RelativeGlobalFile overwritten with build version information"
         }
         $GlobalDeclarationFound = $True
     }
     else {
-        Write-Host "BuildVersion: No variable of type $TypeName found in $RelativeGlobalFile"
+        LogInfo "No variable of type $TypeName found in $RelativeGlobalFile"
     }
 }
 
@@ -459,7 +456,7 @@ Project \s* := \s* \( ( .+ ) \)
         # Run this after replacing project information which also includes the build date
         $Content = $Content.Replace($Match.Groups[2].Value, $BuildDate)
         Set-Content -Path $File $Content
-        Write-Host "BuildVersion: $RelativeFile updated with build version information"
+        LogInfo "$RelativeFile updated with build version information"
     }
     else {
         $Content = @"
@@ -470,7 +467,7 @@ VAR
 END_VAR
 "@
         Set-Content -Path $File $Content
-        Write-Host "BuildVersion: $RelativeFile overwritten with build version information"
+        LogInfo "$RelativeFile overwritten with build version information"
     }
 
     # Register Variables.var in package definition
@@ -485,7 +482,7 @@ END_VAR
                 $Append = "`  <File Description=""Local variables"" Private=""true"">Variables.var</File>`r`n  "
                 $Content = $Content.Replace($Match.Groups[1].Value, $Match.Groups[1].Value + $Append)
                 Set-Content -Path $PackageFile -Encoding utf8 -NoNewLine $Content
-                Write-Host "BuildVersion: Register $RelativeProgramPath Variable.var with package"
+                LogInfo "Register $RelativeProgramPath Variable.var with package"
             }
         }
     }
@@ -495,9 +492,9 @@ END_VAR
 # Complete
 ################################################################################
 if((-not $GlobalDeclarationFound) -and (-not $ProgramFound)) {
-    Write-Warning "BuildVersion: No local or global build version information has been initialized"
+    LogWarning "No local or global build version information has been initialized"
     if($OptionErrorIfNoInitialization) { exit 1 }
 }
 else {
-    Write-Host "BuildVersion: Completed $ScriptName powershell script"
+    LogInfo "Completed $ScriptName powershell script"
 }
