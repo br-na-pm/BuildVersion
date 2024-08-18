@@ -37,7 +37,11 @@ param (
     # Create build error if uncommitted changes are found in git repository
     [switch]$ErrorChange,
     # Create build error if neither a local or global variable is initialized with version information
-    [switch]$ErrorInit
+    [switch]$ErrorInit,
+
+    [switch]$PrintArguments,
+    [switch]$PrintResults,
+    [switch]$LogDebug
 )
 
 # Local functions
@@ -108,14 +112,18 @@ function LogSwitch {
 $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
 
-################################################################################
-# Check project
-################################################################################
-# Debug
-# for($i = 0; $i -lt $args.Length; $i++) {
-#     $Value = $args[$i]
-#     Write-Host "Debug BuildVersion: Argument $i = $Value"
-# }
+# Print arguments
+if($PrintArguments -or $LogDebug) {
+    LogInfo "Parameter project path: $ProjectPath"
+    LogInfo "Parameter Automation Studio version: $StudioVersion"
+    LogInfo "Parameter user name: $UserName"
+    LogInfo "Parameter project name: $ProjectName"
+    LogInfo "Parameter configuration: $Configuration"
+    LogInfo "Parameter build mode: $BuildMode"
+    LogInfo "Parameter program name: $ProgramName"
+    LogInfo "Parameter global filename: $GlobalFilename"
+    LogInfo "Parameter type name: $TypeName"
+}
 
 # Verify logical path
 $LogicalPath = $ProjectPath + "\Logical\"
