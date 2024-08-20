@@ -3,7 +3,7 @@
 [BuildVersion](https://github.com/br-na-pm/BuildVersion#readme) is a software package for [Automation Studio](https://www.br-automation.com/en/products/software/automation-software/automation-studio/) projects.  
 The package includes a [PowerShell](https://learn.microsoft.com/en/powershell/) script to automatically capture version information during a build.  
 The script is intended for use with the version control system [git](https://git-scm.com/).  
-**NOTE:** This is not an official package. BuildVersion is provided as-is under the GNU GPL v3.0 license agreement.  
+**NOTE:** This is not an official package.  
 
 ![Initialize build version 2022-03-31_12 27 13](https://user-images.githubusercontent.com/33841634/161134786-7ea1422b-55c4-4f49-a427-3e261ded259d.png)
 
