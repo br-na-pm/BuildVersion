@@ -95,10 +95,10 @@ function ThrowError {
     exit 1
 }
 
-function LogSwitch {
+function LogError {
     param (
-        [Parameter(Position = 0)][Bool]$Condition = $False,
-        [Parameter(Position = 1)][String]$Message = $LogDefault
+        [Parameter(Position = 0)][String]$Message = $LogDefault,
+        [switch]$Condition
     )
     if($Condition) {
         ThrowError $Message
@@ -108,22 +108,30 @@ function LogSwitch {
     }
 }
 
+function LogDebug {
+    param (
+        [Parameter(Position = 0)][String]$Message = "Debug message",
+        [switch]$Condition
+    )
+    if($LogDebug.IsPresent -or $Condition) {
+        LogInfo ("(Debug) " + $Message)
+    }
+}
+
 # Initialize
 $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
 
 # Print arguments
-if($PrintArguments -or $LogDebug) {
-    LogInfo "Parameter project path: $ProjectPath"
-    LogInfo "Parameter Automation Studio version: $StudioVersion"
-    LogInfo "Parameter user name: $UserName"
-    LogInfo "Parameter project name: $ProjectName"
-    LogInfo "Parameter configuration: $Configuration"
-    LogInfo "Parameter build mode: $BuildMode"
-    LogInfo "Parameter program name: $ProgramName"
-    LogInfo "Parameter global filename: $GlobalFilename"
-    LogInfo "Parameter type name: $TypeName"
-}
+LogDebug "Parameter project path = $ProjectPath" -Condition:$PrintArguments
+LogDebug "Parameter Automation Studio version = $StudioVersion" -Condition:$PrintArguments
+LogDebug "Parameter user name = $UserName" -Condition:$PrintArguments
+LogDebug "Parameter project name = $ProjectName" -Condition:$PrintArguments
+LogDebug "Parameter configuration = $Configuration" -Condition:$PrintArguments
+LogDebug "Parameter build mode = $BuildMode" -Condition:$PrintArguments
+LogDebug "Parameter program name = $ProgramName" -Condition:$PrintArguments
+LogDebug "Parameter global filename = $GlobalFilename" -Condition:$PrintArguments
+LogDebug "Parameter type name = $TypeName" -Condition:$PrintArguments
 
 # Verify logical path
 $LogicalPath = $ProjectPath + "\Logical\"
@@ -140,9 +148,11 @@ $Search = Get-ChildItem -Path $LogicalPath -Filter $ProgramName -Recurse -Direct
 $ProgramFound = $False
 # Loop through zero or more directories named $ProgramName
 foreach($SearchItem in $Search) {
+    LogDebug "Search logical path for $ProgramName result = $SearchItem"
     $ProgramPath = $LogicalPath + $SearchItem + "\"
     # Search for any file in this directory with extension .prg
     $SubSearch = Get-ChildItem -Path $ProgramPath -Filter "*.prg" -Name
+    LogDebug "Search $SearchItem for program result = $SubSearch"
     # If there is at least one *.prg file assume Automation Studio program
     if($SubSearch.Count -eq 1) {
         $ProgramFound = $True
@@ -184,7 +194,7 @@ try {
     git version *> $Null
 } 
 catch {
-    LogSwitch $ErrorRepo.IsPresent "Git in not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH"
+    LogError "Git in not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH" -Condition:$ErrorRepo
 }
 
 # Is the project in a repository? Use `git config --list --local`
@@ -192,7 +202,7 @@ try {
     git -C $ProjectPath config --list --local *> $Null
     $BuiltWithGit = 1
     if($LASTEXITCODE -ne 0) {
-        LogSwitch $ErrorRepo.IsPresent "No local git repository is located at the project path $ProjectPath"
+        LogError "No local git repository is located at the project path $ProjectPath" -Condition:$ErrorRepo
         $BuiltWithGit = 0
     }
 }
@@ -294,7 +304,7 @@ try {
         $ChangeWarning = 0
     }
     else {
-        LogSwitch $ErrorChange.IsPresent "Uncommitted changes detected"
+        LogError "Uncommitted changes detected" -Condition:$ErrorChange
         $ChangeWarning = 1
     }
 }
@@ -495,8 +505,19 @@ END_VAR
 ################################################################################
 # Complete
 ################################################################################
+LogDebug "Result url = $Url" -Condition:$PrintResults
+LogDebug "Result branch = $Branch" -Condition:$PrintResults
+LogDebug "Result tag = $Tag" -Condition:$PrintResults
+LogDebug "Result additional commits = $AdditionalCommits" -Condition:$PrintResults
+LogDebug "Result version = $Version" -Condition:$PrintResults
+LogDebug "Result sha1 = $Sha1" -Condition:$PrintResults
+LogDebug "Result describe = $Describe" -Condition:$PrintResults
+LogDebug "Result uncommitted changes = $UncommittedChanges" -Condition:$PrintResults
+LogDebug "Result commit author = $CommitAuthorName" -Condition:$PrintResults
+LogDebug "Result commit author email = $CommitAuthorEmail" -Condition:$PrintResults
+
 if((-not $GlobalDeclarationFound) -and (-not $ProgramFound)) {
-    LogSwitch $ErrorInit.IsPresent "No local or global build version information has been initialized"
+    LogError "No local or global build version information has been initialized" -Condition:$ErrorInit
 }
 else {
     LogInfo "Completed $ScriptName powershell script"
