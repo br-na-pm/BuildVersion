@@ -39,9 +39,8 @@ param (
     # Create build error if neither a local or global variable is initialized with version information
     [switch]$ErrorInit,
 
-    [switch]$PrintArguments,
-    [switch]$PrintResults,
-    [switch]$LogDebug
+    # Print input parameters, results, and additional debug messages
+    [switch]$PrintDebug
 )
 
 # Local functions
@@ -110,10 +109,9 @@ function LogError {
 
 function LogDebug {
     param (
-        [Parameter(Position = 0)][String]$Message = "Debug message",
-        [switch]$Condition
+        [Parameter(Position = 0)][String]$Message = "Debug message"
     )
-    if($LogDebug.IsPresent -or $Condition) {
+    if($PrintDebug.IsPresent) {
         LogInfo ("(Debug) " + $Message)
     }
 }
@@ -123,15 +121,15 @@ $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
 
 # Print arguments
-LogDebug "Parameter project path = $ProjectPath" -Condition:$PrintArguments
-LogDebug "Parameter Automation Studio version = $StudioVersion" -Condition:$PrintArguments
-LogDebug "Parameter user name = $UserName" -Condition:$PrintArguments
-LogDebug "Parameter project name = $ProjectName" -Condition:$PrintArguments
-LogDebug "Parameter configuration = $Configuration" -Condition:$PrintArguments
-LogDebug "Parameter build mode = $BuildMode" -Condition:$PrintArguments
-LogDebug "Parameter program name = $ProgramName" -Condition:$PrintArguments
-LogDebug "Parameter global filename = $GlobalFilename" -Condition:$PrintArguments
-LogDebug "Parameter type name = $TypeName" -Condition:$PrintArguments
+LogDebug "Parameter - ProjectPath = `"$ProjectPath`""
+LogDebug "Parameter - StudioVersion = `"$StudioVersion`""
+LogDebug "Parameter - UserName = `"$UserName`""
+LogDebug "Parameter - ProjectName = `"$ProjectName`""
+LogDebug "Parameter - Configuration = `"$Configuration`""
+LogDebug "Parameter - BuildMode = `"$BuildMode`""
+LogDebug "Parameter - ProgramName = `"$ProgramName`""
+LogDebug "Parameter - GlobalFilename = `"$GlobalFilename`""
+LogDebug "Parameter - TypeName = `"$TypeName`""
 
 # Verify logical path
 $LogicalPath = $ProjectPath + "\Logical\"
@@ -505,16 +503,16 @@ END_VAR
 ################################################################################
 # Complete
 ################################################################################
-LogDebug "Result url = $Url" -Condition:$PrintResults
-LogDebug "Result branch = $Branch" -Condition:$PrintResults
-LogDebug "Result tag = $Tag" -Condition:$PrintResults
-LogDebug "Result additional commits = $AdditionalCommits" -Condition:$PrintResults
-LogDebug "Result version = $Version" -Condition:$PrintResults
-LogDebug "Result sha1 = $Sha1" -Condition:$PrintResults
-LogDebug "Result describe = $Describe" -Condition:$PrintResults
-LogDebug "Result uncommitted changes = $UncommittedChanges" -Condition:$PrintResults
-LogDebug "Result commit author = $CommitAuthorName" -Condition:$PrintResults
-LogDebug "Result commit author email = $CommitAuthorEmail" -Condition:$PrintResults
+LogDebug "Result - Git URL = `"$Url`""
+LogDebug "Result - Git Branch = `"$Branch`""
+LogDebug "Result - Git Tag = `"$Tag`""
+LogDebug "Result - Git Additional Commits = `"$AdditionalCommits`""
+LogDebug "Result - Git Version = `"$Version`""
+LogDebug "Result - Git SHA1 = `"$Sha1`""
+LogDebug "Result - Git Describe = `"$Describe`""
+LogDebug "Result - Git Uncommitted Changes = `"$UncommittedChanges`""
+LogDebug "Result - Git Commit Author = `"$CommitAuthorName`""
+LogDebug "Result - Git Commit Author Email = `"$CommitAuthorEmail`""
 
 if((-not $GlobalDeclarationFound) -and (-not $ProgramFound)) {
     LogError "No local or global build version information has been initialized" -Condition:$ErrorInit
