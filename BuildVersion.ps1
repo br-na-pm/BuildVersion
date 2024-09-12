@@ -33,11 +33,11 @@ param (
     [String]$TypeName = "BuildVersionType",
 
     # Create build error if git is not installed or no git repository is found in project root
-    [switch]$ErrorRepo,
+    [switch]$ErrorOnRepository,
     # Create build error if uncommitted changes are found in git repository
-    [switch]$ErrorChange,
+    [switch]$ErrorOnChange,
     # Create build error if neither a local or global variable is initialized with version information
-    [switch]$ErrorInit,
+    [switch]$ErrorOnInitialization,
 
     # Print input parameters, results, and additional debug messages
     [switch]$PrintDebug
@@ -192,7 +192,7 @@ try {
     git version *> $Null
 } 
 catch {
-    LogError "Git in not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH" -Condition:$ErrorRepo
+    LogError "Git in not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH" -Condition:$ErrorOnRepository
 }
 
 # Is the project in a repository? Use `git config --list --local`
@@ -200,7 +200,7 @@ try {
     git -C $ProjectPath config --list --local *> $Null
     $BuiltWithGit = 1
     if($LASTEXITCODE -ne 0) {
-        LogError "No local git repository is located at the project path $ProjectPath" -Condition:$ErrorRepo
+        LogError "No local git repository is located at the project path $ProjectPath" -Condition:$ErrorOnRepository
         $BuiltWithGit = 0
     }
 }
@@ -302,7 +302,7 @@ try {
         $ChangeWarning = 0
     }
     else {
-        LogError "Uncommitted changes detected" -Condition:$ErrorChange
+        LogError "Uncommitted changes detected" -Condition:$ErrorOnChange
         $ChangeWarning = 1
     }
 }
@@ -515,7 +515,7 @@ LogDebug "Result - Git Commit Author = `"$CommitAuthorName`""
 LogDebug "Result - Git Commit Author Email = `"$CommitAuthorEmail`""
 
 if((-not $GlobalDeclarationFound) -and (-not $ProgramFound)) {
-    LogError "No local or global build version information has been initialized" -Condition:$ErrorInit
+    LogError "No local or global build version information has been initialized" -Condition:$ErrorOnInitialization
 }
 else {
     LogInfo "Completed $ScriptName powershell script"
