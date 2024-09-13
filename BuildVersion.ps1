@@ -116,6 +116,29 @@ function LogDebug {
     }
 }
 
+function CleanPath {
+    param (
+        [Ref]$Path
+    )
+    $Copy = $($Path).Value
+    if ($Copy.GetType().Name -ne "String") {
+        return
+    }
+    $EndsWithSlash = $False
+    $LastCharacter = $Copy[$Copy.Length - 1]
+    if (($LastCharacter -eq "/") -or ($LastCharacter -eq "\")) {
+        $EndsWithSlash = $True
+    }
+    $($Path).Value = (($Copy.Split("/\") | Where-Object {$_ -ne ""}) -Join "\")
+    if ($EndsWithSlash) {
+        $($Path).Value = $($Path).Value + "\"
+    }
+}
+
+$MyPath = "Apple\/Banana/\Cranberry\\"
+CleanPath ([Ref]$MyPath)
+Write-Host $MyPath
+
 # Initialize
 $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
