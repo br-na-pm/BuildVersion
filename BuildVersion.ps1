@@ -151,20 +151,20 @@ $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
 
 # Print arguments
-LogDebug "Parameter - ProjectPath = `"$ProjectPath`""
-LogDebug "Parameter - StudioVersion = `"$StudioVersion`""
-LogDebug "Parameter - UserName = `"$UserName`""
-LogDebug "Parameter - ProjectName = `"$ProjectName`""
-LogDebug "Parameter - Configuration = `"$Configuration`""
-LogDebug "Parameter - BuildMode = `"$BuildMode`""
-LogDebug "Parameter - ProgramName = `"$ProgramName`""
-LogDebug "Parameter - GlobalFilename = `"$GlobalFilename`""
-LogDebug "Parameter - TypeName = `"$TypeName`""
+LogDebug "Parameter ProjectPath = `"$ProjectPath`""
+LogDebug "Parameter StudioVersion = `"$StudioVersion`""
+LogDebug "Parameter UserName = `"$UserName`""
+LogDebug "Parameter ProjectName = `"$ProjectName`""
+LogDebug "Parameter Configuration = `"$Configuration`""
+LogDebug "Parameter BuildMode = `"$BuildMode`""
+LogDebug "Parameter ProgramName = `"$ProgramName`""
+LogDebug "Parameter GlobalFilename = `"$GlobalFilename`""
+LogDebug "Parameter TypeName = `"$TypeName`""
 
 # Verify logical path
 $LogicalPath = CleanPath($ProjectPath + "\Logical\")
 if([System.IO.Directory]::Exists($LogicalPath)) {
-    LogInfo "Logical directory exists at $LogicalPath"
+    LogInfo "Located Logical directory at $LogicalPath"
 }
 else {
     ThrowError "Unable to locate Logical directory in project path $ProjectPath"
@@ -176,21 +176,21 @@ $Search = Get-ChildItem -Path $LogicalPath -Filter $ProgramName -Recurse -Direct
 $ProgramFound = $False
 # Loop through zero or more directories named $ProgramName
 foreach($SearchItem in $Search) {
-    LogDebug "Search result in logical path for program name = $SearchItem"
+    LogDebug "Search result in logical path for program name = `"$SearchItem`""
     $ProgramPath = CleanPath($LogicalPath + $SearchItem + "\")
     # Search for any file in this directory with extension .prg
     $SubSearch = Get-ChildItem -Path $ProgramPath -Filter "*.prg" -Name
-    LogDebug "Search result in program path for program file = $SubSearch"
+    LogDebug "Search result in program path for program file = `"$SubSearch`""
     # If there is at least one *.prg file assume Automation Studio program
     if($SubSearch.Count -eq 1) {
         $ProgramFound = $True
         $PackageFile = $ProgramPath + $SubSearch
-        LogInfo "Located $ProgramName program at $ProgramPath"
+        LogInfo "Located `"$ProgramName`" program at $ProgramPath"
         break
     }
 }
 if(-NOT $ProgramFound) {
-    LogWarning "Unable to locate $ProgramName in $LogicalPath"
+    LogWarning "Unable to locate `"$ProgramName`" program in $LogicalPath"
 }
 
 # Search for global variable declaration file
@@ -199,13 +199,13 @@ $GlobalFileFound = $False
 foreach($SearchItem in $Search) {
     $GlobalFile = CleanPath($LogicalPath + $SearchItem)
     $GlobalFileFound = $True
-    LogInfo "Located $GlobalFilename at $GlobalFile"
+    LogInfo "Located `"$GlobalFilename`" declaration file at $GlobalFile"
     # Only take the first Global.var found
     break
 }
 if(-not $GlobalFileFound) {
     # This is only informational because a global variable declaration is optional
-    LogInfo "Unable to locate $GlobalFilename in $LogicalPath"
+    LogInfo "Unable to locate `"$GlobalFilename`" declaration file in $LogicalPath"
 }
 
 ################################################################################
@@ -239,7 +239,7 @@ catch {
 try {
     $Url = git -C $ProjectPath config --get remote.origin.url 2> $Null
     if($LASTEXITCODE -ne 0) {
-        LogWarning "Git repository has no remote or differs from ""origin"""
+        LogWarning "Git repository has no remote or differs from `"origin`""
         $Url = "Unknown"
     }
 }
@@ -434,17 +434,17 @@ Project \s* := \s* \( ( .+ ) \)
             if($BuiltWithGit) { $Content = $Content.Replace($MatchInitialization.Groups[2].Value, $GitInitialization) }
             $Content = $Content.Replace($MatchInitialization.Groups[3].Value, $ProjectInitialization)
             Set-Content -Path $GlobalFile $Content
-            LogInfo "$Name's initialization in $GlobalFile updated with build version information"
+            LogInfo "`"$Name`" variable initialization updated with build version information at $GlobalFile"
         }
         else {
             $Content = $Content.Replace($MatchDeclaration.Value, "$Name : $TypeName := (Script:=($ScriptInitialization),Git:=($GitInitialization),Project:=($ProjectInitialization));")
             Set-Content -Path $GlobalFile $Content
-            LogInfo "$Name's initialization in $GlobalFile overwritten with build version information"
+            LogInfo "`"$Name`" variable initialization overwritten with build version information at $GlobalFile"
         }
         $GlobalDeclarationFound = $True
     }
     else {
-        LogInfo "No variable of type $TypeName found in $GlobalFile"
+        LogInfo "No variable of type `"$TypeName`" found in $GlobalFile"
     }
 }
 
@@ -492,7 +492,7 @@ Project \s* := \s* \( ( .+ ) \)
         # Run this after replacing project information which also includes the build date
         $Content = $Content.Replace($Match.Groups[2].Value, $BuildDate)
         Set-Content -Path $File $Content
-        LogInfo "$File updated with build version information"
+        LogInfo "Local declaration file updated with build version information at $File"
     }
     else {
         $Content = @"
@@ -503,7 +503,7 @@ VAR
 END_VAR
 "@
         Set-Content -Path $File $Content
-        LogInfo "$File overwritten with build version information"
+        LogInfo "Local declaration file overwritten with build version information at $File"
     }
 
     # Register Variables.var in package definition
@@ -518,7 +518,7 @@ END_VAR
                 $Append = "`  <File Description=""Local variables"" Private=""true"">Variables.var</File>`r`n  "
                 $Content = $Content.Replace($Match.Groups[1].Value, $Match.Groups[1].Value + $Append)
                 Set-Content -Path $PackageFile -Encoding utf8 -NoNewLine $Content
-                LogInfo "Register $ProgramPath Variable.var with package file"
+                LogInfo "`"$ProgramName`" program's `"Variables.var`" declaration file registered with package file at $PackageFile"
             }
         }
     }
@@ -527,16 +527,16 @@ END_VAR
 ################################################################################
 # Complete
 ################################################################################
-LogDebug "Result - Git URL = `"$Url`""
-LogDebug "Result - Git Branch = `"$Branch`""
-LogDebug "Result - Git Tag = `"$Tag`""
-LogDebug "Result - Git Additional Commits = `"$AdditionalCommits`""
-LogDebug "Result - Git Version = `"$Version`""
-LogDebug "Result - Git SHA1 = `"$Sha1`""
-LogDebug "Result - Git Describe = `"$Describe`""
-LogDebug "Result - Git Uncommitted Changes = `"$UncommittedChanges`""
-LogDebug "Result - Git Commit Author = `"$CommitAuthorName`""
-LogDebug "Result - Git Commit Author Email = `"$CommitAuthorEmail`""
+LogDebug "Result Git URL = `"$Url`""
+LogDebug "Result Git Branch = `"$Branch`""
+LogDebug "Result Git Tag = `"$Tag`""
+LogDebug "Result Git Additional Commits = `"$AdditionalCommits`""
+LogDebug "Result Git Version = `"$Version`""
+LogDebug "Result Git SHA1 = `"$Sha1`""
+LogDebug "Result Git Describe = `"$Describe`""
+LogDebug "Result Git Uncommitted Changes = `"$UncommittedChanges`""
+LogDebug "Result Git Commit Author = `"$CommitAuthorName`""
+LogDebug "Result Git Commit Author Email = `"$CommitAuthorEmail`""
 
 if((-not $GlobalDeclarationFound) -and (-not $ProgramFound)) {
     LogError "No local or global build version information has been initialized" -Condition:$ErrorOnInitialization
