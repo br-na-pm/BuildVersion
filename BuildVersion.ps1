@@ -132,6 +132,27 @@ function CleanPath {
     return $Path
 }
 
+function StringTruncate {
+    param (
+        [Ref]$Text,
+        # Truncate to a default length of 80 characters
+        [Int]$Length = 80
+    )
+    
+    $Copy = $($Text).Value
+    
+    # Verify reference parameter is of type string
+    if ($Copy.GetType().Name -ne "String") {
+        return
+    }
+
+    $($Text).Value = $Copy.SubString(0, [System.Math]::Min($Length, $Copy.Length))
+}
+
+$MyString = "abc123"
+StringTruncate ([Ref]$MyString) 4
+Write-Host $MyString
+
 # Initialize
 $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
