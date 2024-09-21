@@ -132,9 +132,6 @@ function CleanPath {
     return $Path
 }
 
-Write-Host (CleanPath "Apple\/Banana/\Cranberry\\")
-Write-Host (CleanPath 123)
-
 # Initialize
 $ScriptName = $MyInvocation.MyCommand.Name
 LogInfo "Running $ScriptName PowerShell script"
@@ -151,7 +148,7 @@ LogDebug "Parameter - GlobalFilename = `"$GlobalFilename`""
 LogDebug "Parameter - TypeName = `"$TypeName`""
 
 # Verify logical path
-$LogicalPath = $ProjectPath + "\Logical\"
+$LogicalPath = CleanPath($ProjectPath + "\Logical\")
 if([System.IO.Directory]::Exists($LogicalPath)) {
     LogInfo "Logical directory exists at $LogicalPath"
 }
@@ -165,11 +162,11 @@ $Search = Get-ChildItem -Path $LogicalPath -Filter $ProgramName -Recurse -Direct
 $ProgramFound = $False
 # Loop through zero or more directories named $ProgramName
 foreach($SearchItem in $Search) {
-    LogDebug "Search logical path for $ProgramName result = $SearchItem"
-    $ProgramPath = $LogicalPath + $SearchItem + "\"
+    LogDebug "Search result in logical path for program name = $SearchItem"
+    $ProgramPath = CleanPath($LogicalPath + $SearchItem + "\")
     # Search for any file in this directory with extension .prg
     $SubSearch = Get-ChildItem -Path $ProgramPath -Filter "*.prg" -Name
-    LogDebug "Search $SearchItem for program result = $SubSearch"
+    LogDebug "Search result in program path for program file = $SubSearch"
     # If there is at least one *.prg file assume Automation Studio program
     if($SubSearch.Count -eq 1) {
         $ProgramFound = $True
@@ -186,7 +183,7 @@ if(-NOT $ProgramFound) {
 $Search = Get-ChildItem -Path $LogicalPath -Filter $GlobalFilename -Recurse -File -Name 
 $GlobalFileFound = $False
 foreach($SearchItem in $Search) {
-    $GlobalFile = $LogicalPath + $SearchItem
+    $GlobalFile = CleanPath($LogicalPath + $SearchItem)
     $GlobalFileFound = $True
     LogInfo "Located $GlobalFilename at $GlobalFile"
     # Only take the first Global.var found
@@ -448,7 +445,7 @@ Project \s* := \s* \( ( .+ ) \)
 # Read and search text in Variables.var in $ProgramName
 if($ProgramFound) {
     # Read
-    $File = $ProgramPath + "Variables.var"
+    $File = CleanPath($ProgramPath + "\Variables.var")
     $RelativeFile = $File.Replace($LogicalPath, ".\Logical\")
     if([System.IO.File]::Exists($File)) {
         $Content = Get-Content -Raw $File
