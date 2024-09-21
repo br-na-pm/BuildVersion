@@ -425,17 +425,17 @@ Project \s* := \s* \( ( .+ ) \)
             if($BuiltWithGit) { $Content = $Content.Replace($MatchInitialization.Groups[2].Value, $GitInitialization) }
             $Content = $Content.Replace($MatchInitialization.Groups[3].Value, $ProjectInitialization)
             Set-Content -Path $GlobalFile $Content
-            LogInfo "$Name's initialization in $RelativeGlobalFile updated with build version information"
+            LogInfo "$Name's initialization in $GlobalFile updated with build version information"
         }
         else {
             $Content = $Content.Replace($MatchDeclaration.Value, "$Name : $TypeName := (Script:=($ScriptInitialization),Git:=($GitInitialization),Project:=($ProjectInitialization));")
             Set-Content -Path $GlobalFile $Content
-            LogInfo "$Name's initialization in $RelativeGlobalFile overwritten with build version information"
+            LogInfo "$Name's initialization in $GlobalFile overwritten with build version information"
         }
         $GlobalDeclarationFound = $True
     }
     else {
-        LogInfo "No variable of type $TypeName found in $RelativeGlobalFile"
+        LogInfo "No variable of type $TypeName found in $GlobalFile"
     }
 }
 
@@ -446,7 +446,6 @@ Project \s* := \s* \( ( .+ ) \)
 if($ProgramFound) {
     # Read
     $File = CleanPath($ProgramPath + "\Variables.var")
-    $RelativeFile = $File.Replace($LogicalPath, ".\Logical\")
     if([System.IO.File]::Exists($File)) {
         $Content = Get-Content -Raw $File
         # Protect empty string
@@ -484,7 +483,7 @@ Project \s* := \s* \( ( .+ ) \)
         # Run this after replacing project information which also includes the build date
         $Content = $Content.Replace($Match.Groups[2].Value, $BuildDate)
         Set-Content -Path $File $Content
-        LogInfo "$RelativeFile updated with build version information"
+        LogInfo "$File updated with build version information"
     }
     else {
         $Content = @"
@@ -495,7 +494,7 @@ VAR
 END_VAR
 "@
         Set-Content -Path $File $Content
-        LogInfo "$RelativeFile overwritten with build version information"
+        LogInfo "$File overwritten with build version information"
     }
 
     # Register Variables.var in package definition
@@ -510,7 +509,7 @@ END_VAR
                 $Append = "`  <File Description=""Local variables"" Private=""true"">Variables.var</File>`r`n  "
                 $Content = $Content.Replace($Match.Groups[1].Value, $Match.Groups[1].Value + $Append)
                 Set-Content -Path $PackageFile -Encoding utf8 -NoNewLine $Content
-                LogInfo "Register $RelativeProgramPath Variable.var with package"
+                LogInfo "Register $ProgramPath Variable.var with package file"
             }
         }
     }
