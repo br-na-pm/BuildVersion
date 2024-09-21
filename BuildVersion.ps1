@@ -118,26 +118,22 @@ function LogDebug {
 
 function CleanPath {
     param (
-        [Ref]$Path
+        [String]$Path
     )
-    $Copy = $($Path).Value
-    if ($Copy.GetType().Name -ne "String") {
-        return
-    }
     $EndsWithSlash = $False
-    $LastCharacter = $Copy[$Copy.Length - 1]
+    $LastCharacter = $Path[$Path.Length - 1]
     if (($LastCharacter -eq "/") -or ($LastCharacter -eq "\")) {
         $EndsWithSlash = $True
     }
-    $($Path).Value = (($Copy.Split("/\") | Where-Object {$_ -ne ""}) -Join "\")
+    $Path = ($Path.Split("/\") | Where-Object {$_ -ne ""}) -Join "\"
     if ($EndsWithSlash) {
-        $($Path).Value = $($Path).Value + "\"
+        $Path = $Path + "\"
     }
+    return $Path
 }
 
-$MyPath = "Apple\/Banana/\Cranberry\\"
-CleanPath ([Ref]$MyPath)
-Write-Host $MyPath
+Write-Host (CleanPath "Apple\/Banana/\Cranberry\\")
+Write-Host (CleanPath 123)
 
 # Initialize
 $ScriptName = $MyInvocation.MyCommand.Name
