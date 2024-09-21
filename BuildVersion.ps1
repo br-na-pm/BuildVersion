@@ -138,20 +138,13 @@ function StringTruncate {
         # Truncate to a default length of 80 characters
         [Int]$Length = 80
     )
-    
     $Copy = $($Text).Value
-    
     # Verify reference parameter is of type string
     if ($Copy.GetType().Name -ne "String") {
         return
     }
-
     $($Text).Value = $Copy.SubString(0, [System.Math]::Min($Length, $Copy.Length))
 }
-
-$MyString = "abc123"
-StringTruncate ([Ref]$MyString) 4
-Write-Host $MyString
 
 # Initialize
 $ScriptName = $MyInvocation.MyCommand.Name
@@ -218,11 +211,6 @@ if(-not $GlobalFileFound) {
 ################################################################################
 # Git information
 ################################################################################
-# Truncate strings to match size of type declaration
-function TruncateString {
-    param ([String]$String,[Int]$Length)
-    $String.Substring(0,[System.Math]::Min($Length,$String.Length))
-}
 
 # Is git command available? Use `git version`
 try {
@@ -258,7 +246,7 @@ try {
 catch {
     $Url = "Unknown"
 }
-$Url = TruncateString $Url 255
+StringTruncate ([Ref]$Url) 255
 
 # Branch
 # References:
@@ -273,7 +261,7 @@ try {
 catch {
     $Branch = "Unknown"
 }
-$Branch = TruncateString $Branch 80
+StringTruncate ([Ref]$Branch)
 
 # Tag, additional commits, describe
 # References:
@@ -308,9 +296,9 @@ catch {
     $AdditionalCommits = 0
     $Version = "None"
 }
-$Tag = TruncateString $Tag 80
-$Describe = TruncateString $Describe 80
-$Version = TruncateString $Version 80 
+StringTruncate ([Ref]$Tag)
+StringTruncate ([Ref]$Describe)
+StringTruncate ([Ref]$Version)
 
 # Sha1
 # References:
@@ -325,7 +313,7 @@ try {
 catch {
     $Sha1 = "Unknown"
 }
-$Sha1 = TruncateString $Sha1 80
+StringTruncate ([Ref]$Sha1)
 
 # Uncommitted changes
 try {
@@ -347,7 +335,7 @@ catch {
     $UncommittedChanges = "Unknown"
     $ChangeWarning = 0
 }
-$UncommittedChanges = TruncateString $UncommittedChanges.Trim() 80
+StringTruncate ([Ref]$UncommittedChanges)
 
 # Date
 try {
@@ -380,19 +368,19 @@ catch {
     $CommitAuthorName = "Unknown"
     $CommitAuthorEmail = "Unknown"
 }
-$CommitAuthorName = TruncateString $CommitAuthorName 80
-$CommitAuthorEmail = TruncateString $CommitAuthorEmail 80
+StringTruncate ([Ref]$CommitAuthorName)
+StringTruncate ([Ref]$CommitAuthorEmail)
 
 ################################################################################
 # Project information
 ################################################################################
 $BuildDate = Get-Date -Format "yyyy-MM-dd-HH:mm:ss"
 
-$StudioVersion = TruncateString $StudioVersion 80
-$UserName = TruncateString $UserName 80
-$ProjectName = TruncateString $ProjectName 80
-$Configuration = TruncateString $Configuration 80
-$BuildMode = TruncateString $BuildMode 80
+StringTruncate ([Ref]$StudioVersion)
+StringTruncate ([Ref]$UserName)
+StringTruncate ([Ref]$ProjectName)
+StringTruncate ([Ref]$Configuration)
+StringTruncate ([Ref]$BuildMode)
 
 $BuildVariables = [Ref]$StudioVersion, [Ref]$UserName, [Ref]$ProjectName, [Ref]$Configuration, [Ref]$BuildMode 
 for($i = 0; $i -lt $BuildVariables.Length; $i++) {
