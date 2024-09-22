@@ -81,42 +81,28 @@ Upon successful installation, users will see BuildVersion messages in the output
 
 ## Developers
 
-The PowerShell script provides several options for naming, error severity, and build reaction.  
-By default, the PowerShell script will not generate a build error (if installed correctly).  
-However, developers may wish to enable more severe build reactions given the git version information. The options are detailed below and can be enabled by setting the `$True` constant in BuildVersion.ps1.
+The [PowerShell script](https://github.com/br-na-pm/BuildVersion/blob/dd9dd64a9b23b1f31e800e7619e68b56a351374e/BuildVersion.ps1#L16) offers several optional [switch parameters](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_parameters?view=powershell-7.4#switch-parameters).
 
-```powershell
-############
-# Parameters
-############
-# The script will search under Logical to find this program (e.g. .\Logical\BuildVersion\BuildVer)
-$ProgramName = "BuildVer"
-# The script will search under Logical to find this variable file (e.g. .\Logical\Global.var)
-$GlobalDeclarationName = "Global.var"
-# The script will search for variables of this type
-$TypeIdentifier = "BuildVersionType"
+`-ErrorOnRepository`
 
-# Use $True or $False to select options
-# Create build error if the script fails to due missing arguments
-$OptionErrorOnArguments = $False
-# Create build error if git is not installed or no git repository is found in project root
-$OptionErrorOnRepositoryCheck = $False 
-# Create build error if uncommitted changes are found in git repository
-$OptionErrorOnUncommittedChanges = $False
-# Create build error if neither a local or global variable is initialized with version information
-$OptionErrorIfNoInitialization = $False
-```
+Create a build error if git is not installed of the project path does not exist within a git repository.
+
+`-ErrorOnChange`
+
+Create a build error if the git repository shows uncommited changes.
+
+`-ErrorOnInitialization`
+
+Create a build error if neither the local variable or global variable was updated with build information.
+
+`-PrintDebug`
+
+Print all debug messages to the output results.
 
 To run multiple commands in the pre-build event, use the follow syntax.
 
 ```powershell
 <command_1> & <command_2>
-```
-
-For example, users can test the build script without building the whole project with the following example.  An error is forced at the end of the pre-build step.
-
-```powershell
-PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)" & exit 1
 ```
 
 ## Build 
