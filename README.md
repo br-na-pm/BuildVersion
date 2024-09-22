@@ -1,24 +1,28 @@
-# BuildVersion [![Made For B&R](https://raw.githubusercontent.com/hilch/BandR-badges/main/Made-For-BrAutomation.svg)](https://www.br-automation.com)
+# BuildVersion
 
-[BuildVersion](https://github.com/br-na-pm/BuildVersion#readme) is a software package for [Automation Studio](https://www.br-automation.com/en/products/software/automation-software/automation-studio/) projects.  
-The package includes a [PowerShell](https://learn.microsoft.com/en/powershell/) script to automatically capture version information during a build.  
-The script is intended for use with the version control system [git](https://git-scm.com/).  
-**NOTE:** This is not an official package.  
+[![Made for B&R](https://raw.githubusercontent.com/hilch/BandR-badges/dfd5e264d7d2dd369fd37449605673f779db437d/Made-For-BrAutomation.svg)](https://www.br-automation.com)
+![GitHub License](https://img.shields.io/github/license/br-na-pm/BuildVersion)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/br-na-pm/BuildVersion/total)
+[![GitHub issues](https://img.shields.io/github/issues-raw/br-na-pm/BuildVersion)](https://github.com/br-na-pm/BuildVersion/issues)
+
+[BuildVersion](https://github.com/br-na-pm/BuildVersion#readme) is a software package for [Automation Studio](https://www.br-automation.com/en/products/software/automation-software/automation-studio/) projects to transfer version information to runtime variables during each build.
+
+The package includes a Windows-native [PowerShell](https://learn.microsoft.com/en/powershell/) script to automatically capture version information during the pre-build event.  
+The script is intended for use with the version control system [git](https://git-scm.com/).
+
+**NOTE:** This is not an official package and is supported by the community.  BuildVersion is provided as-in under the [MIT License](https://mit-license.org/) agreement.  Source code, documentation, and issues are managed through [GitHub](https://github.com/br-na-pm/BuildVersion).
 
 ![Initialize build version 2022-03-31_12 27 13](https://user-images.githubusercontent.com/33841634/161134786-7ea1422b-55c4-4f49-a427-3e261ded259d.png)
 
 ## Features
 
-- Capture git repository information and Automation Studio project information
-- Use with and without git
-  - The git info is only updated if a repository is detected, otherwise unmodified
-- Initialize local variable
-  - **Variables.var** in **BuildVer** task located anywhere in **Logical** folder
-- Initialize global variable
-  - First variable of **BuildVersionType** in **Global.var** located anywhere in **Logical** folder
-- PowerShell script will not error project compilation after successful [installation](#installation)
-- mappView widget integration
-  - See [BuildVersion Widget Library](https://github.com/br-na-pm/BuildVersionWidget#readme)
+- :trident: Capture git repository information
+- :arrow_down: Capture Automation Studio project and build information
+- :beginner: Use with and without git
+- :file_folder: Initialize local variable
+- :earth_americas: Initialize global variable
+- :warning: PowerShell script will not throw error in project build by default
+- :tv: [mappView widget](https://github.com/br-na-pm/BuildVersionWidget#readme) integration
 
 ## Installation
 
@@ -35,14 +39,19 @@ The script is intended for use with the version control system [git](https://git
 - Build Events -> Configuration Pre-Build Step -> Insert the following
 
 ```powershell
-PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 $(WIN32_AS_PROJECT_PATH) "$(AS_VERSION)" "$(AS_USER_NAME)" "$(AS_PROJECT_NAME)" "$(AS_CONFIGURATION)" "$(AS_BUILD_MODE)"
+PowerShell -ExecutionPolicy ByPass -File $(WIN32_AS_PROJECT_PATH)\Logical\BuildVersion\BuildVersion.ps1 -ProjectPath $(WIN32_AS_PROJECT_PATH) -StudioVersion "$(AS_VERSION)" -UserName "$(AS_USER_NAME)" -ProjectName "$(AS_PROJECT_NAME)" -Configuration "$(AS_CONFIGURATION)" -BuildMode "$(AS_BUILD_MODE)"
 ```
 
-The first argument `$(WIN32_AS_PROJECT_PATH)` omits surrounding quotes because it will resolve with quotes.  If extra quotes are added to this argument, project paths with spaces will fail to be read ("C:\My Projects\CoffeeMachine").
-
-The Pre-Build Step will have to be set for all desired configurations.
-
 ![Step 2 2022-04-10_13-49-32](https://user-images.githubusercontent.com/33841634/162637534-a7b174c9-fff3-4a81-9096-b1335f0e7f23.gif)
+
+If the BuildVersion package is placed in subdirectories of Logical, the pre-build event must be updated to reflect the subdirectories.  
+For example, if the BuildVersion package is placed in a `Tools` subdirectory then the `-File` argument must be updated to the following.
+
+```
+-File $(WIN32_AS_PROJECT_PATH)\Logical\Tools\BuildVersion\BuildVersion.ps1
+```
+
+The Pre-Build Step will have to be set for all desired configurations.  
 
 Upon successful installation, users will see BuildVersion messages in the output results when building.
 
