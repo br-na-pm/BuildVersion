@@ -16,7 +16,7 @@ The script is intended for use with the version control system [git](https://git
 
 ## Features
 
-- :trident: Capture git repository information
+- :octocat: Capture git repository information
 - :arrow_down: Capture Automation Studio project and build information
 - :beginner: Use with and without git
 - :file_folder: Initialize local variable
