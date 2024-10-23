@@ -253,7 +253,7 @@ StringTruncate ([Ref]$Url) 255
 # https://stackoverflow.com/a/12142066 
 try {
     $Branch = git -C $ProjectPath branch --show-current 2> $Null
-    if($LASTEXITCODE -ne 0) {
+    if($LASTEXITCODE -ne 0 -or $null -eq $Branch) {
         LogWarning "Local repository is in a headless state"
         $Branch = "Unknown"
     }
