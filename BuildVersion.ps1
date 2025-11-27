@@ -317,7 +317,7 @@ StringTruncate ([Ref]$Sha1)
 
 # Uncommitted changes
 try {
-    $UncommittedChanges = git -C $ProjectPath diff --shortstat 2> $Null
+    $UncommittedChanges = git -C $ProjectPath diff --shortstat --merge-base HEAD 2> $Null
     if($LASTEXITCODE -ne 0) {
         $UncommittedChanges = "Unknown"
         $ChangeWarning = 0
