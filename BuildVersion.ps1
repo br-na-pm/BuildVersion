@@ -212,9 +212,37 @@ if(-not $GlobalFileFound) {
 # Git information
 ################################################################################
 
+$PathToGit = "Unknown"
+
+# Try to find git.exe on PATH
+$GitInPATH = Get-Command git.exe -ErrorAction SilentlyContinue
+if ($GitInPATH) {
+    $PathToGit = $GitInPATH.Source
+    LogInfo "git.exe found at `"$PathToGit`" by PATH environment"
+}
+
+$GitVersion = & $PathToGit version
+LogInfo "Git version is `"$GitVersion`""
+
+$PathToGitHubDesktop = Join-Path $env:LOCALAPPDATA "GitHubDesktop"
+
+if (Test-Path $PathToGitHubDesktop) {
+    LogDebug "GitHub Desktop installed for this user at `"$PathToGitHubDesktop`""
+    
+    $Versions = Get-ChildItem -Path $PathToGitHubDesktop -Directory -Filter "app-*"
+    foreach ($Version in $Versions) {
+        $Path = Join-Path $Version.FullName "resources\app\git\cmd\git.exe"
+        if (Test-Path $Path) {
+            LogDebug "Found git.exe in GitHub Desktop application at `"$Path`""
+            $PathToGit = $Path
+            break
+        }
+    }
+}
+
 # Is git command available? Use `git version`
 try {
-    git version *> $Null
+    & $PathToGit version *> $Null
 } 
 catch {
     LogError "Git is not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH" -Condition:$ErrorOnRepository
@@ -222,7 +250,7 @@ catch {
 
 # Is the project in a repository? Use `git config --list --local`
 try { 
-    git -C $ProjectPath config --list --local *> $Null
+    & $PathToGit -C $ProjectPath config --list --local *> $Null
     $BuiltWithGit = 1
     if($LASTEXITCODE -ne 0) {
         LogError "No local git repository is located at the project path $ProjectPath" -Condition:$ErrorOnRepository
@@ -237,7 +265,7 @@ catch {
 # References:
 # https://reactgo.com/git-remote-url/
 try {
-    $Url = git -C $ProjectPath config --get remote.origin.url 2> $Null
+    $Url = & $PathToGit -C $ProjectPath config --get remote.origin.url 2> $Null
     if($LASTEXITCODE -ne 0) {
         LogWarning "Git repository has no remote or differs from `"origin`""
         $Url = "Unknown"
@@ -252,7 +280,7 @@ StringTruncate ([Ref]$Url) 255
 # References:
 # https://stackoverflow.com/a/12142066 
 try {
-    $Branch = git -C $ProjectPath branch --show-current 2> $Null
+    $Branch = & $PathToGit -C $ProjectPath branch --show-current 2> $Null
     if($LASTEXITCODE -ne 0 -or $null -eq $Branch) {
         LogWarning "Local repository is in a headless state"
         $Branch = "Unknown"
@@ -269,7 +297,7 @@ StringTruncate ([Ref]$Branch)
 # "Catching exceptions" https://stackoverflow.com/a/32287181
 # "Suppressing outputs" https://stackoverflow.com/a/57548278
 try {
-    $Tag = git -C $ProjectPath describe --tags --abbrev=0 2> $Null
+    $Tag = & $PathToGit -C $ProjectPath describe --tags --abbrev=0 2> $Null
     if($LASTEXITCODE -ne 0) {
         LogWarning "No tags have been created on this branch"
         $Tag = "None"
@@ -278,7 +306,7 @@ try {
         $Version = "None"
     }
     else {
-        $Describe = git -C $ProjectPath describe --tags --long 2> $Null
+        $Describe = & $PathToGit -C $ProjectPath describe --tags --long 2> $Null
         if($Describe.Replace($Tag,"").Split("-").Length -ne 3) {
             LogWarning "Unable to determine # of additional commits"
             $AdditionalCommits = 0
@@ -304,7 +332,7 @@ StringTruncate ([Ref]$Version)
 # References:
 # https://www.systutorials.com/how-to-get-the-latest-git-commit-sha-1-in-a-repository/
 try {
-    $Sha1 = git -C $ProjectPath rev-parse HEAD 2> $Null
+    $Sha1 = & $PathToGit -C $ProjectPath rev-parse HEAD 2> $Null
     if($LASTEXITCODE -ne 0) {
         LogWarning "Unable to determine latest secure hash"
         $Sha1 = "Unknown"
@@ -317,7 +345,7 @@ StringTruncate ([Ref]$Sha1)
 
 # Uncommitted changes
 try {
-    $UncommittedChanges = git -C $ProjectPath diff --shortstat --merge-base HEAD 2> $Null
+    $UncommittedChanges = & $PathToGit -C $ProjectPath diff --shortstat --merge-base HEAD 2> $Null
     if($LASTEXITCODE -ne 0) {
         $UncommittedChanges = "Unknown"
         $ChangeWarning = 0
@@ -339,7 +367,7 @@ StringTruncate ([Ref]$UncommittedChanges)
 
 # Date
 try {
-    $GitDate = git -C $ProjectPath log -1 --format=%cd --date=iso 2> $Null
+    $GitDate = & $PathToGit -C $ProjectPath log -1 --format=%cd --date=iso 2> $Null
     if($LASTEXITCODE -ne 0) {
         LogWarning "Unable to determine latest commit date"
         $CommitDate = "2000-01-01-00:00:00"
@@ -356,8 +384,8 @@ catch {
 # References:
 # https://stackoverflow.com/a/41548774
 try {
-    $CommitAuthorName = git -C $ProjectPath log -1 --pretty=format:'%an' 2> $Null
-    $CommitAuthorEmail = git -C $ProjectPath log -1 --pretty=format:'%ae' 2> $Null
+    $CommitAuthorName = & $PathToGit -C $ProjectPath log -1 --pretty=format:'%an' 2> $Null
+    $CommitAuthorEmail = & $PathToGit -C $ProjectPath log -1 --pretty=format:'%ae' 2> $Null
     if($LASTEXITCODE -ne 0) {
         LogWarning "Unable to determine latest commit author"
         $CommitAuthorName = "Unknown"
