@@ -217,7 +217,7 @@ try {
     git version *> $Null
 } 
 catch {
-    LogError "Git in not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH" -Condition:$ErrorOnRepository
+    LogError "Git is not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH" -Condition:$ErrorOnRepository
 }
 
 # Is the project in a repository? Use `git config --list --local`

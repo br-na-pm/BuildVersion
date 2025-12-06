@@ -73,7 +73,7 @@ Upon successful installation, users will see BuildVersion messages in the output
 - Possible cause: The local task was renamed and the PowerShell script cannot find it.
   - *Remedy*: Update the PowerShell script's `$ProgramName` parameter (default `"BuildVer"`) to match the task name in the project.
 
-> BuildVersion: Git in not installed or unavailable in PATH environment  
+> BuildVersion: Git is not installed or unavailable in PATH environment  
 > BuildVersion: Please install git (git-scm.com) with recommended options for PATH  
 
 - Possible cause: Using the git client Sourcetree with the embedded git preference.
@@ -85,7 +85,7 @@ The [PowerShell script](https://github.com/br-na-pm/BuildVersion/blob/dd9dd64a9b
 
 `-ErrorOnRepository`
 
-Create a build error if git is not installed of the project path does not exist within a git repository.
+Create a build error if git is not installed or the project path does not exist within a git repository.
 
 `-ErrorOnChange`
 
