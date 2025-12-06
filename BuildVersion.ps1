@@ -212,6 +212,7 @@ if(-not $GlobalFileFound) {
 # Git information
 ################################################################################
 
+# Assume not found
 $PathToGit = "Unknown"
 
 # Try to find git.exe on PATH
@@ -220,29 +221,32 @@ if ($GitInPATH) {
     $PathToGit = $GitInPATH.Source
     LogInfo "git.exe found at `"$PathToGit`" by PATH environment"
 }
-
-$GitVersion = & $PathToGit version
-LogInfo "Git version is `"$GitVersion`""
-
-$PathToGitHubDesktop = Join-Path $env:LOCALAPPDATA "GitHubDesktop"
-
-if (Test-Path $PathToGitHubDesktop) {
-    LogDebug "GitHub Desktop installed for this user at `"$PathToGitHubDesktop`""
+else {
+    # Unable to find git.exe on PATH
+    LogDebug "Git was not found on PATH, searching for embedded git executables in local user applications"
     
-    $Versions = Get-ChildItem -Path $PathToGitHubDesktop -Directory -Filter "app-*"
-    foreach ($Version in $Versions) {
-        $Path = Join-Path $Version.FullName "resources\app\git\cmd\git.exe"
-        if (Test-Path $Path) {
-            LogDebug "Found git.exe in GitHub Desktop application at `"$Path`""
-            $PathToGit = $Path
-            break
+    # Try to find embedded git in GitHub Desktop application
+    $PathToGitHubDesktop = Join-Path $env:LOCALAPPDATA "GitHubDesktop"
+
+    if (Test-Path $PathToGitHubDesktop) {
+        LogDebug "GitHub Desktop installed for this user at `"$PathToGitHubDesktop`""
+        
+        $Versions = Get-ChildItem -Path $PathToGitHubDesktop -Directory -Filter "app-*"
+        foreach ($Version in $Versions) {
+            $Path = Join-Path $Version.FullName "resources\app\git\cmd\git.exe"
+            if (Test-Path $Path) {
+                LogInfo "Found git.exe in GitHub Desktop application at `"$Path`""
+                $PathToGit = $Path
+                break
+            }
         }
     }
 }
 
 # Is git command available? Use `git version`
 try {
-    & $PathToGit version *> $Null
+    $GitVersion = & $PathToGit version
+    LogDebug "Git version is `"$GitVersion`""
 } 
 catch {
     LogError "Git is not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH" -Condition:$ErrorOnRepository
