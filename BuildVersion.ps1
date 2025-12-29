@@ -371,6 +371,23 @@ catch {
 StringTruncate ([Ref]$CommitAuthorName)
 StringTruncate ([Ref]$CommitAuthorEmail)
 
+# Git user name and email
+try {
+    $GitUserName = git config user.name 2> $Null
+    $GitUserEmail = git config user.email 2> $Null
+    if($LASTEXITCODE -ne 0) {
+        LogWarning "Unable to determine git user"
+        $GitUserName = "Unknown"
+        $GitUserEmail = "Unknown"
+    }
+}
+catch {
+    $GitUserName = "Unknown"
+    $GitUserEmail = "Unknown"
+}
+StringTruncate ([Ref]$GitUserName)
+StringTruncate ([Ref]$GitUserEmail)
+
 ################################################################################
 # Project information
 ################################################################################
@@ -398,7 +415,7 @@ for($i = 0; $i -lt $BuildVariables.Length; $i++) {
 ################################################################################
 $ScriptInitialization = "BuiltWithGit:=$BuiltWithGit"
 
-$GitInitialization = "URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',ChangeWarning:=$ChangeWarning,CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail'"
+$GitInitialization = "URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',ChangeWarning:=$ChangeWarning,UserName:='$GitUserName',UserEmail:='$GitUserEmail',CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail'"
 
 $ProjectInitialization = "ASVersion:='$StudioVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate"
 
