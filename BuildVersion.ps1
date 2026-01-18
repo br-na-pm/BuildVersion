@@ -224,13 +224,13 @@ if ($GitInPATH) {
 else {
     # Unable to find git.exe on PATH
     LogDebug "Git was not found on PATH, searching for embedded git executables in local user applications"
-    
+
     # Try to find embedded git in GitHub Desktop application
     $PathToGitHubDesktop = Join-Path $env:LOCALAPPDATA "GitHubDesktop"
 
     if (Test-Path $PathToGitHubDesktop) {
         LogDebug "GitHub Desktop installed for this user at `"$PathToGitHubDesktop`""
-        
+
         $Versions = Get-ChildItem -Path $PathToGitHubDesktop -Directory -Filter "app-*"
         foreach ($Version in $Versions) {
             $Path = Join-Path $Version.FullName "resources\app\git\cmd\git.exe"
@@ -405,8 +405,8 @@ StringTruncate ([Ref]$CommitAuthorEmail)
 
 # Git user name and email
 try {
-    $GitUserName = git -C $ProjectPath config --get user.name 2> $Null
-    $GitUserEmail = git -C $ProjectPath config --get user.email 2> $Null
+    $GitUserName = & $PathToGit -C $ProjectPath config --get user.name 2> $Null
+    $GitUserEmail = & $PathToGit -C $ProjectPath config --get user.email 2> $Null
     if($LASTEXITCODE -ne 0) {
         LogWarning "Unable to determine git user"
         $GitUserName = "Unknown"
