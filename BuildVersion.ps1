@@ -1,15 +1,15 @@
 ################################################################################
  # File: BuildVersion.ps1
  # Created: 2022-03-21
- # 
- # Contributors: 
+ #
+ # Contributors:
  # - Wesley Buchanan
  # - Tyler Matijevich
  # - Connor Trostel
- # 
+ #
  # License:
- #  This file BuildVersion.ps1 is part of the BuildVersion project released 
- #  under the MIT License agreement.  For more information, please visit 
+ #  This file BuildVersion.ps1 is part of the BuildVersion project released
+ #  under the MIT License agreement.  For more information, please visit
  #  https://github.com/br-na-pm/BuildVersion/blob/main/LICENSE.
 ################################################################################
 
@@ -88,7 +88,7 @@ function ThrowError {
     # There will be no build summary message in the output results
     # The red foreground color helps when testing in other terminals and has no effect on Automation Studio
     Write-Host -ForegroundColor Red "ERROR: $LogPrefix $Message"
-    
+
     # This provides an addition message in Automation Studio "Pre-build step was executed with errors"
     # For this reason, name the function ThrowError instead of LogError
     exit 1
@@ -194,7 +194,7 @@ if(-NOT $ProgramFound) {
 }
 
 # Search for global variable declaration file
-$Search = Get-ChildItem -Path $LogicalPath -Filter $GlobalFilename -Recurse -File -Name 
+$Search = Get-ChildItem -Path $LogicalPath -Filter $GlobalFilename -Recurse -File -Name
 $GlobalFileFound = $False
 foreach($SearchItem in $Search) {
     $GlobalFile = CleanPath($LogicalPath + $SearchItem)
@@ -247,13 +247,13 @@ else {
 try {
     $GitVersion = & $PathToGit version
     LogDebug "Git version is `"$GitVersion`""
-} 
+}
 catch {
     LogError "Git is not installed or unavailable in PATH environment - re-launch Automation Studio after updating PATH" -Condition:$ErrorOnRepository
 }
 
 # Is the project in a repository? Use `git config --list --local`
-try { 
+try {
     & $PathToGit -C $ProjectPath config --list --local *> $Null
     $BuiltWithGit = 1
     if($LASTEXITCODE -ne 0) {
@@ -282,7 +282,7 @@ StringTruncate ([Ref]$Url) 255
 
 # Branch
 # References:
-# https://stackoverflow.com/a/12142066 
+# https://stackoverflow.com/a/12142066
 try {
     $Branch = & $PathToGit -C $ProjectPath branch --show-current 2> $Null
     if($LASTEXITCODE -ne 0 -or $null -eq $Branch) {
@@ -403,6 +403,23 @@ catch {
 StringTruncate ([Ref]$CommitAuthorName)
 StringTruncate ([Ref]$CommitAuthorEmail)
 
+# Git user name and email
+try {
+    $GitUserName = git -C $ProjectPath config --get user.name 2> $Null
+    $GitUserEmail = git -C $ProjectPath config --get user.email 2> $Null
+    if($LASTEXITCODE -ne 0) {
+        LogWarning "Unable to determine git user"
+        $GitUserName = "Unknown"
+        $GitUserEmail = "Unknown"
+    }
+}
+catch {
+    $GitUserName = "Unknown"
+    $GitUserEmail = "Unknown"
+}
+StringTruncate ([Ref]$GitUserName)
+StringTruncate ([Ref]$GitUserEmail)
+
 ################################################################################
 # Project information
 ################################################################################
@@ -414,7 +431,7 @@ StringTruncate ([Ref]$ProjectName)
 StringTruncate ([Ref]$Configuration)
 StringTruncate ([Ref]$BuildMode)
 
-$BuildVariables = [Ref]$StudioVersion, [Ref]$UserName, [Ref]$ProjectName, [Ref]$Configuration, [Ref]$BuildMode 
+$BuildVariables = [Ref]$StudioVersion, [Ref]$UserName, [Ref]$ProjectName, [Ref]$Configuration, [Ref]$BuildMode
 for($i = 0; $i -lt $BuildVariables.Length; $i++) {
     # Automation Studio build variables are resolved using the currency character '$'
     # However, '$' is also the escape character for IEC 61131-3 languages
@@ -430,7 +447,7 @@ for($i = 0; $i -lt $BuildVariables.Length; $i++) {
 ################################################################################
 $ScriptInitialization = "BuiltWithGit:=$BuiltWithGit"
 
-$GitInitialization = "URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',ChangeWarning:=$ChangeWarning,CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail'"
+$GitInitialization = "URL:='$Url',Branch:='$Branch',Tag:='$Tag',AdditionalCommits:=$AdditionalCommits,Version:='$Version',Sha1:='$Sha1',Describe:='$Describe',UncommittedChanges:='$UncommittedChanges',ChangeWarning:=$ChangeWarning,UserName:='$GitUserName',UserEmail:='$GitUserEmail',CommitDate:=DT#$CommitDate,CommitAuthorName:='$CommitAuthorName',CommitAuthorEmail:='$CommitAuthorEmail'"
 
 $ProjectInitialization = "ASVersion:='$StudioVersion',UserName:='$UserName',ProjectName:='$ProjectName',Configuration:='$Configuration',BuildMode:='$BuildMode',BuildDate:=DT#$BuildDate"
 
@@ -499,7 +516,7 @@ if($ProgramFound) {
     # Search
     $Regex = @"
 (?x)
-\(\*This \s file \s was \s automatically \s generated \s by \s ([\w\d\.]+) \s on \s ([\d-:]+)\.\*\) 
+\(\*This \s file \s was \s automatically \s generated \s by \s ([\w\d\.]+) \s on \s ([\d-:]+)\.\*\)
 (?:.|\n)*
 BuildVersion \s* : \s* $TypeName \s*
 := \s* \( \s*

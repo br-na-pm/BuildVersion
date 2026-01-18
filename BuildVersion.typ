@@ -18,6 +18,8 @@ TYPE
 		Describe : STRING[80]; (*<tag>-<addn_commits>-g<short_sha1>*)
 		UncommittedChanges : STRING[80]; (*Example: 5 files changed, 14 insertions(+), 11 deletions(-)*)
 		ChangeWarning : BOOL := TRUE; (*Uncommitted changes have been detected (true if git or repository is missing)*)
+		UserName : STRING[80]; (*Git user name from git.config*)
+		UserEmail : STRING[80]; (*Git user email from git.config*)
 		CommitDate : DATE_AND_TIME; (*Local timestamp of the latest commit*)
 		CommitAuthorName : STRING[80]; (*Name of author of latest commit*)
 		CommitAuthorEmail : STRING[80]; (*Email of author of latest commit*)
