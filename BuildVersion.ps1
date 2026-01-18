@@ -373,8 +373,8 @@ StringTruncate ([Ref]$CommitAuthorEmail)
 
 # Git user name and email
 try {
-    $GitUserName = git config user.name 2> $Null
-    $GitUserEmail = git config user.email 2> $Null
+    $GitUserName = git -C $ProjectPath config --get user.name 2> $Null
+    $GitUserEmail = git -C $ProjectPath config --get user.email 2> $Null
     if($LASTEXITCODE -ne 0) {
         LogWarning "Unable to determine git user"
         $GitUserName = "Unknown"
